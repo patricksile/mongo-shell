@@ -56,12 +56,9 @@ for(let i = 0; i < program.rawArgs.length; i++) {
   if(program.rawArgs[i] == __filename) {
     if (!program.rawArgs[i+1]) break;
     let arg = program.rawArgs[i+1].trim();
-    // console.dir(arg)
     // Test if this is a valid uri string
-    if(typeof arg === 'string'
-      && arg.indexOf('.js') == -1
-      && arg.indexOf('mongodb://') == -1) {
-        uri = `mongodb://${arg}`;
+    if(typeof arg === 'string' && arg.indexOf('.js') == -1) {
+      uri = arg.indexOf('mongodb://') == -1 ? `mongodb://${arg}` : arg;
     }
   }
 }
