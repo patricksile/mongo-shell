@@ -1,19 +1,13 @@
-"use strict"
+'use strict';
 
 const co = require('co');
-const repl = require('repl');
 const vm = require('vm');
 const fs = require('fs');
-const cliff = require('cliff');
-const readline = require('readline');
 const program = require('commander');
 const Executor = require('./lib/executor');
 const REPL = require('./lib/repl');
-const {
-  MongoClient, ObjectId
-} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const Db = require('./lib/db');
-const Collection = require('./lib/collection');
 const plugins = require('./lib/plugins');
 
 program
@@ -41,24 +35,20 @@ program
 
 // Find any files in there
 const files = program.rawArgs.filter(x => {
-  return x.indexOf('.js') != -1 && x !== __filename;
-})
-
+  return x.indexOf('.js') !== -1 && x !== __filename;
+});
 
 // Default uri connection string
 let uri = 'mongodb://localhost:27017/test';
-// Default Executor used for the shell
-// Contains the current prompt
-let prompt = 'mongodb> ';
 
 // Get the connection string if any specified
-for(let i = 0; i < program.rawArgs.length; i++) {
-  if(program.rawArgs[i] == __filename) {
-    if (!program.rawArgs[i+1]) break;
-    let arg = program.rawArgs[i+1].trim();
+for (let i = 0; i < program.rawArgs.length; i++) {
+  if (program.rawArgs[i] === __filename) {
+    if (!program.rawArgs[i + 1]) break;
+    let arg = program.rawArgs[i + 1].trim();
     // Test if this is a valid uri string
-    if(typeof arg === 'string' && arg.indexOf('.js') == -1) {
-      uri = arg.indexOf('mongodb://') == -1 ? `mongodb://${arg}` : arg;
+    if (typeof arg === 'string' && arg.indexOf('.js') === -1) {
+      uri = arg.indexOf('mongodb://') === -1 ? `mongodb://${arg}` : arg;
     }
   }
 }
@@ -70,8 +60,8 @@ co(function*() {
   // Attempt to instantiate all the plugins
   const pluginInstances = [];
   // Go over all the plugins
-  for (var name in plugins) {
-    pluginInstances.push(new plugins[name](client))
+  for (let name in plugins) {
+    pluginInstances.push(new plugins[name](client));
   }
 
   // Init context
@@ -83,23 +73,23 @@ co(function*() {
   }
 
   // Create a context for execution
-  var context = vm.createContext(initContext);
+  let context = vm.createContext(initContext);
   // Default db
   context.db = Db.proxy(client.s.databaseName, client, context);
   // Add global special methods
-  context.require = require
+  context.require = require;
 
   // Do we have files to execute
   if (files.length > 0) {
     // Execute each file
     const executor = new Executor();
 
-    for(var i = 0; i < files.length; i++) {
+    for (let i = 0; i < files.length; i++) {
       // Read the file
       const file = fs.readFileSync(files[i], 'utf8');
       // Let's execute the file
       yield executor.executeSync(file, context, {
-        detectCallbacks: true,
+        detectCallbacks: true
       });
     }
 
@@ -111,7 +101,7 @@ co(function*() {
 
   // Create a repl
   const replServer = new REPL(client, context, {
-    plugins: pluginInstances,
+    plugins: pluginInstances
   });
   // Start the repl
   replServer.start();
