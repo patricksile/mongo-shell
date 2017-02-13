@@ -1,0 +1,235 @@
+#!/usr/bin/env node
+
+'use strict';
+const fs = require('fs'),
+      p = require('path'),
+      rst = require('restructured').default,
+      yaml = require('js-yaml');
+
+// ~/Development/mongo/docs/source
+
+if (process.argv.length < 4) {
+  console.log('usage: gen-methods <path to docs> <scope>');
+  process.exit(1);
+}
+
+let base_path = process.argv[2];
+let method_path = p.join(base_path, 'reference', 'method');
+let includes_path = p.join(base_path, 'includes');
+let scope = process.argv[3];
+
+function findNode(data, criteria) {
+  if (criteria(data)) return data;
+  if (data.hasOwnProperty('children')) {
+    for (let i = 0; i < data.children.length; ++i) {
+      let result = findNode(data.children[i], criteria);
+      if (!!result) return result;
+    }
+  }
+
+  return undefined;
+}
+
+function descValue(node) {
+  if (node.type === 'text') return node.value.trim();
+  if (node.type === 'interpreted_text') {
+    return node.children.map(c => descValue(c)).join(' ');
+  }
+
+  return undefined;
+}
+
+function processDefinition(path) {
+  let data = fs.readFileSync(path).toString('utf8');
+  data = data.replace(/:returns:/, '@returns');
+  let parsed = rst.parse(data);
+
+  let definitionNode = findNode(parsed, data => {
+    let basePredicate =
+      data.type === 'section' && data.hasOwnProperty('children') &&
+      data.children[0].type === 'title' &&
+      data.children[0].hasOwnProperty('children');
+
+    let definitionPredicate =
+      basePredicate && data.children[0].children[0].value === 'Definition';
+
+    let descriptionPredicate =
+      basePredicate && data.children[0].children[0].value === 'Description';
+
+    return definitionPredicate || descriptionPredicate;
+  });
+
+  if (definitionNode === undefined) {
+    // for some exciting special cases like `db.getMongo.txt`:
+    definitionNode = parsed.children[0];
+
+    // remove first block_quote because it's just the nav info
+    let idx = definitionNode.children.findIndex(d => d.type === 'block_quote');
+    definitionNode.children.splice(idx, 1);
+  }
+
+  // console.dir(parsed, { depth: null });
+  // console.dir(definitionNode, { depth: null });
+
+  if (path.match(/db.createCollection/)) {
+    definitionNode.children[2].children.splice(1, 1);
+  }
+
+  return definitionNode;
+}
+
+function generateDescription(path) {
+  let definitionNode = processDefinition(path);
+
+  try {
+    let blockQuote = findNode(definitionNode, data => data.type === 'block_quote');
+    let firstParagraph = findNode(blockQuote, data => data.type === 'paragraph');
+    let description = firstParagraph.children.map(c => descValue(c)).join(' ');
+    return description;
+  } catch (err) {
+    console.error('err: ', err);
+    return undefined;
+  }
+}
+
+function fallbackIncludeFinder(path) {
+  let data = fs.readFileSync(path).toString('utf8');
+  let includeDirectives = data.match(/.. include:: (.*)/g);
+  if (includeDirectives) {
+    includeDirectives = includeDirectives.filter(m => m.match(/apiargs/));
+    if (includeDirectives.length) return includeDirectives[0].replace('.. include:: ', '');
+  }
+
+  return undefined;
+}
+
+function fixIncludePath(path) { return path.replace(/^\/includes\//, '').replace(/\//, '-').replace(/.rst$/, '.yaml'); }
+function generateParams(path) {
+  let definitionNode = processDefinition(path);
+
+  try {
+    let blockQuote = findNode(definitionNode, data => data.type === 'block_quote');
+    let includeDirective =
+      findNode(blockQuote, data => {
+        return data.type === 'directive' && data.directive === 'include' &&
+               data.children[0].value.match(/apiargs/);
+      });
+
+    let includePath;
+    if (!includeDirective) {
+      includePath = fallbackIncludeFinder(path);
+      if (!includePath) return undefined;
+    } else {
+      includePath = includeDirective.children[0].value;
+    }
+
+    return generateParamDocs(p.join(includes_path, fixIncludePath(includePath)));
+  } catch (err) {
+    console.error('err: ', err);
+    return undefined;
+  }
+}
+
+function mergeNoOverwite(dst, src) { for (let k in src) { if (!dst.hasOwnProperty(k)) dst[k] = src[k]; } }
+function collectParams(path) {
+  let params = [];
+  yaml.loadAll(fs.readFileSync(path, 'utf8'), def => {
+    if (def.hasOwnProperty('source')) {
+      let mergeDef;
+      yaml.loadAll(fs.readFileSync(p.join(includes_path, def.source.file), 'utf8'), argDef => {
+        if (argDef.name === def.source.ref) mergeDef = argDef;
+      });
+
+      mergeNoOverwite(def, mergeDef);
+      delete def.source;
+    }
+
+    params.push(def);
+  });
+
+  return params;
+}
+
+function paramType(def) { return def.type === 'document' ? 'object' : def.type; }
+function paramName(def) { return !!def.optional ? `[${def.name}]` : def.name; }
+function paramDescription(def) {
+  return def.description
+    .replace(/\r?\n|\r/g, ' ')
+    .replace(/:method:/g, '')
+    .replace(/:dbcommand:/g, '')
+    // .replace(/([,.!?;:])/g, '$1 ')
+    .trim();
+};
+
+function generateParamDocs(path) {
+  let out = '';
+  let params = collectParams(path);
+  params.forEach(arg => {
+    out += ` * @param {${paramType(arg)}} ${paramName(arg)} ${paramDescription(arg)}\n`;
+  });
+
+  return out;
+}
+
+function generateSignature(path) {
+  let definitionNode = processDefinition(path);
+
+  try {
+    let titleNode = findNode(definitionNode, d => d.type === 'directive' && d.directive === 'method');
+    if (!titleNode) {
+      titleNode = findNode(definitionNode, data => data.type === 'title');
+    }
+
+    let methodName = titleNode.children[0].value.replace(`${scope}.`, '').replace(/\((.*)\)/, '').trim();
+    let defs = [];
+
+    // generate param definitions if possible/required
+    let blockQuote = findNode(definitionNode, data => data.type === 'block_quote');
+    let includeDirective =
+      findNode(blockQuote, data => {
+        return data.type === 'directive' && data.directive === 'include' &&
+               data.children[0].value.match(/apiargs/);
+      });
+
+    let includePath;
+    if (!includeDirective) {
+      includePath = fallbackIncludeFinder(path);
+    } else {
+      includePath = includeDirective.children[0].value;
+    }
+
+    if (includePath) {
+      defs = collectParams(p.join(includes_path, fixIncludePath(includePath)));
+    }
+
+    return `${methodName}(${defs.map(d => d.name).join(', ')})`;
+  } catch (err) {
+    console.error('err: ', err);
+    return undefined;
+  }
+}
+
+fs.readdirSync(method_path)
+  .filter(f => p.extname(f) === '.txt' && f.startsWith(scope) && f.split('.').length === 3)
+  .forEach(f => {
+    // let lookFor = 'db.setProfilingLevel.txt';
+    // let lookFor = 'db.copyDatabase.txt';
+    // let lookFor = 'db.createCollection.txt';
+    // if (f === lookFor) {
+      // console.log('generating for:', f);
+      let description = generateDescription(p.join(method_path, f));
+      let paramDocs = generateParams(p.join(method_path, f));
+      let signature = generateSignature(p.join(method_path, f));
+
+      let out = '/**\n';
+      out += ` * ${description}\n`;
+      if (paramDocs) {
+        out += ' *\n';
+        out += paramDocs;
+      }
+
+      out += ' */\n';
+      out += signature + ' {}\n';
+      console.log(out);
+    // }
+  });
