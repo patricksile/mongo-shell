@@ -13,9 +13,9 @@ if (process.argv.length < 4) {
   process.exit(1);
 }
 
-let base_path = process.argv[2];
-let method_path = p.join(base_path, 'reference', 'method');
-let includes_path = p.join(base_path, 'includes');
+let basePath = process.argv[2];
+let methodPath = p.join(basePath, 'reference', 'method');
+let includesPath = p.join(basePath, 'includes');
 let scope = process.argv[3];
 
 function findNode(data, criteria) {
@@ -40,9 +40,9 @@ function descValue(node) {
 }
 
 function processDefinition(path) {
-  let data = fs.readFileSync(path).toString('utf8');
-  data = data.replace(/:returns:/, '@returns');
-  let parsed = rst.parse(data);
+  let rawData = fs.readFileSync(path).toString('utf8');
+  rawData = rawData.replace(/:returns:/, '@returns');
+  let parsed = rst.parse(rawData);
 
   let definitionNode = findNode(parsed, data => {
     let basePredicate =
@@ -123,7 +123,7 @@ function generateParams(path) {
       includePath = includeDirective.children[0].value;
     }
 
-    return generateParamDocs(p.join(includes_path, fixIncludePath(includePath)));
+    return generateParamDocs(p.join(includesPath, fixIncludePath(includePath)));
   } catch (err) {
     console.error('err: ', err);
     return undefined;
@@ -136,7 +136,7 @@ function collectParams(path) {
   yaml.loadAll(fs.readFileSync(path, 'utf8'), def => {
     if (def.hasOwnProperty('source')) {
       let mergeDef;
-      yaml.loadAll(fs.readFileSync(p.join(includes_path, def.source.file), 'utf8'), argDef => {
+      yaml.loadAll(fs.readFileSync(p.join(includesPath, def.source.file), 'utf8'), argDef => {
         if (argDef.name === def.source.ref) mergeDef = argDef;
       });
 
@@ -159,7 +159,7 @@ function paramDescription(def) {
     .replace(/:dbcommand:/g, '')
     // .replace(/([,.!?;:])/g, '$1 ')
     .trim();
-};
+}
 
 function generateParamDocs(path) {
   let out = '';
@@ -199,7 +199,7 @@ function generateSignature(path) {
     }
 
     if (includePath) {
-      defs = collectParams(p.join(includes_path, fixIncludePath(includePath)));
+      defs = collectParams(p.join(includesPath, fixIncludePath(includePath)));
     }
 
     return `${methodName}(${defs.map(d => d.name).join(', ')})`;
@@ -209,27 +209,21 @@ function generateSignature(path) {
   }
 }
 
-fs.readdirSync(method_path)
+fs.readdirSync(methodPath)
   .filter(f => p.extname(f) === '.txt' && f.startsWith(scope) && f.split('.').length === 3)
   .forEach(f => {
-    // let lookFor = 'db.setProfilingLevel.txt';
-    // let lookFor = 'db.copyDatabase.txt';
-    // let lookFor = 'db.createCollection.txt';
-    // if (f === lookFor) {
-      // console.log('generating for:', f);
-      let description = generateDescription(p.join(method_path, f));
-      let paramDocs = generateParams(p.join(method_path, f));
-      let signature = generateSignature(p.join(method_path, f));
+    let description = generateDescription(p.join(methodPath, f));
+    let paramDocs = generateParams(p.join(methodPath, f));
+    let signature = generateSignature(p.join(methodPath, f));
 
-      let out = '/**\n';
-      out += ` * ${description}\n`;
-      if (paramDocs) {
-        out += ' *\n';
-        out += paramDocs;
-      }
+    let out = '/**\n';
+    out += ` * ${description}\n`;
+    if (paramDocs) {
+      out += ' *\n';
+      out += paramDocs;
+    }
 
-      out += ' */\n';
-      out += signature + ' {}\n';
-      console.log(out);
-    // }
+    out += ' */\n';
+    out += signature + ' {}\n';
+    console.log(out);
   });
