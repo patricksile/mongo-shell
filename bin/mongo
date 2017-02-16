@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-'use strict';
 const co = require('co');
 const vm = require('vm');
 const fs = require('fs');
@@ -13,6 +12,7 @@ const { MongoClient } = require('mongodb');
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
+const Native = require('../lib/native');
 
 program
   .version('0.0.1')
@@ -86,6 +86,9 @@ co(function*() {
   context.rs = new ReplicaSet(state);
   // Add the sharded object
   context.sh = new Sharded(state, console);
+
+  // Mixin naive methods
+  Native.decorate(context, state);
   // Mix in global Methods
   context = new GlobalMethods(state).decorate(context);
   // Add global special methods
@@ -116,7 +119,7 @@ co(function*() {
     plugins: pluginInstances
   });
   // Start the repl
-  replServer.start();
+  state.repl = replServer.start();
 }).catch(err => {
   console.log(err);
   process.exit(0);
