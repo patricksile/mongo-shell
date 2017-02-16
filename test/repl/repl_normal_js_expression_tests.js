@@ -11,7 +11,7 @@ describe('Repl JS Expressions tests', () => {
 
     it('should correctly handle a global value expression expression [var a = 1]', function(done) {
       // Execute command
-      test.repl.eval('var a = 1', context, '', function(err, result) {
+      test.repl.eval('var a = 1', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.equal(1, result);
 
@@ -28,7 +28,7 @@ describe('Repl JS Expressions tests', () => {
 
     it('should correctly handle a global value expression expression [a = 1 + 1]', function(done) {
       // Execute command
-      test.repl.eval('a = 1 + 1', context, '', function(err, result) {
+      test.repl.eval('a = 1 + 1', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.equal(2, result);
 

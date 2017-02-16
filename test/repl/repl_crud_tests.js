@@ -55,7 +55,7 @@ describe('Repl CRUD tests', () => {
     beforeEach(() => test.setup());
 
     it('should correctly upsert a single document using updateOne', function(done) {
-      test.repl.eval('db.tests2.updateOne({ a1: 1 }, { a1: 1 }, { upsert: true })', context, '', function(err, result) {
+      test.repl.eval('db.tests2.updateOne({ a1: 1 }, { a1: 1 }, { upsert: true })', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.ok(result.upsertedId);
 
@@ -78,7 +78,7 @@ describe('Repl CRUD tests', () => {
       test.client.collection('tests2').insertOne({ f2: 1 })
         .then(() => {
           // Execute command
-          test.repl.eval('db.tests2.updateOne({ f2: 1 }, { $set: { f1: 2 } }, { upsert: true })', context, '', function(err, result) {
+          test.repl.eval('db.tests2.updateOne({ f2: 1 }, { $set: { f1: 2 } }, { upsert: true })', test.context, '', function(err, result) {
             assert.equal(null, err);
             assert.equal(null, result.upsertedId);
 
@@ -94,7 +94,7 @@ describe('Repl CRUD tests', () => {
 
     it('should correctly upsert a single document using updateMany', function(done) {
       // Execute command
-      test.repl.eval('db.tests2.updateMany({f3:1}, {$set: {f3:2}}, { upsert:true })', context, '', function(err, result) {
+      test.repl.eval('db.tests2.updateMany({f3:1}, {$set: {f3:2}}, { upsert:true })', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.ok(result.upsertedId);
 
@@ -117,7 +117,7 @@ describe('Repl CRUD tests', () => {
       test.client.collection('tests2').insertMany([{ f4: 1 }, { f4: 1 }])
         .then(() => {
           // Execute command
-          test.repl.eval('db.tests2.updateMany({f4:1}, {$set: {f5:1}}, { upsert:true })', context, '', function(err, result) {
+          test.repl.eval('db.tests2.updateMany({f4:1}, {$set: {f5:1}}, { upsert:true })', test.context, '', function(err, result) {
             assert.equal(null, err);
             assert.equal(null, result.upsertedId);
 
@@ -139,7 +139,7 @@ describe('Repl CRUD tests', () => {
       test.client.collection('tests2').insertMany([{ g1: 1 }, { g1: 1 }])
         .then(() => {
           // Execute command
-          test.repl.eval('db.tests2.deleteOne({g1:1})', context, '', function(err, result) {
+          test.repl.eval('db.tests2.deleteOne({g1:1})', test.context, '', function(err, result) {
             assert.equal(null, err);
             assert.equal(1, result.deletedCount);
 
@@ -158,7 +158,7 @@ describe('Repl CRUD tests', () => {
       test.client.collection('tests2').insertMany([{ g2: 1 }, { g2: 1 }])
         .then(() => {
           // Execute command
-          test.repl.eval('db.tests2.deleteMany({g2:1})', context, '', function(err, result) {
+          test.repl.eval('db.tests2.deleteMany({g2:1})', test.context, '', function(err, result) {
             assert.equal(null, err);
             assert.equal(2, result.deletedCount);
 

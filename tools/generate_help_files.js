@@ -5,19 +5,18 @@ const mkdirp = require('mkdirp');
 // name space configurations
 const namespaces = {
   'db': [
-    `${__dirname}/lib/db.js`,
-    `${__dirname}/lib/db_mixins/admin.js`,
-    `${__dirname}/lib/db_mixins/auth.js`,
-    `${__dirname}/lib/db_mixins/collection.js`,
-    `${__dirname}/lib/db_mixins/operations.js`
+    `${__dirname}/../lib/db.js`,
   ],
-  'db.collection': [
-    `${__dirname}/lib/collection.js`
+  'rs': [
+    `${__dirname}/../lib/rs.js`
   ]
+  // 'db.collection': [
+  //   `${__dirname}/lib/collection.js`
+  // ]
 };
 
 // Create docs directory
-mkdirp.sync(`${__dirname}/lib/docs`);
+mkdirp.sync(`${__dirname}/../lib/docs`);
 
 // List of final index file
 const indexes = {};
@@ -32,7 +31,7 @@ for (let namespace in namespaces) {
     obj.forEach(element => {
       if (element.ctx.type === 'method') {
         fs.writeFileSync(
-          `${__dirname}/lib/docs/${namespace}.${element.ctx.name}.js`,
+          `${__dirname}/../lib/docs/${namespace}.${element.ctx.name}.js`,
           `module.exports = ${JSON.stringify(element, null, 2)}`,
           'utf8');
 
@@ -58,6 +57,6 @@ ${strings.join(',\n')}
 `;
 
 // Write the indexes file
-fs.writeFileSync(`${__dirname}/lib/docs/index.js`, template, 'utf8');
+fs.writeFileSync(`${__dirname}/../lib/docs/index.js`, template, 'utf8');
 
 console.dir(indexes);

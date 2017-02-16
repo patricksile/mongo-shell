@@ -38,7 +38,8 @@
     "eslint": "^3.15.0",
     "istanbul": "^0.4.5",
     "mkdirp": "^0.5.1",
-    "mocha": "^3.2.0"
+    "mocha": "^3.2.0",
+    "mongodb-topology-manager": "1.0.x"
   },
   "bin": {
     "mongo-shell": "bin/mongo-shell.js"

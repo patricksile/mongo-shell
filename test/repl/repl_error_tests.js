@@ -11,7 +11,7 @@ describe('Repl Error tests', () => {
 
     it('should correctly return sensible error on only providing db and collection', function(done) {
       // Execute command
-      test.repl.eval('db.tests2', context, '', function(err, result) {
+      test.repl.eval('db.tests2', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.equal('test_runner.tests2', result);
 
@@ -24,7 +24,7 @@ describe('Repl Error tests', () => {
     //
     // it('should correctly return sensible error on providing db and collection and legal function', function(done) {
     //   // Execute command
-    //   test.repl.eval('db.tests2.find', context, '', function(err, result) {
+    //   test.repl.eval('db.tests2.find', test.context, '', function(err, result) {
     //     assert.equal(null, err);
     //     assert.equal('test_runner.tests2.find', result);
 
@@ -34,7 +34,7 @@ describe('Repl Error tests', () => {
 
     it('should correctly return nothing for undefined variable', function(done) {
       // Execute command
-      test.repl.eval('db.tests2.__', context, '', function(err, result) {
+      test.repl.eval('db.tests2.__', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.equal('', result);
 

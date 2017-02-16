@@ -11,7 +11,7 @@ describe('Repl Helper tests', () => {
 
     it('should correctly call currentOp method', function(done) {
       // Execute command
-      test.repl.eval('db.currentOp()', context, '', function(err, result) {
+      test.repl.eval('db.currentOp()', test.context, '', function(err, result) {
         assert.equal(null, err);
         assert.ok(result.inprog);
         done();
@@ -20,7 +20,7 @@ describe('Repl Helper tests', () => {
 
     it('should correctly call `eval` method', function(done) {
       // Execute command
-      test.repl.eval('db.eval("return 1")', context, '', function(err, result) {
+      test.repl.eval('db.eval("return 1")', test.context, '', function(err, result) {
         // console.log("==============================================")
         // console.dir(err)
         // console.dir(result)

@@ -6,9 +6,11 @@ const fs = require('fs');
 const program = require('commander');
 const Executor = require('./lib/executor');
 const REPL = require('./lib/repl');
+const ReplicaSet = require('./lib/rs');
 const { MongoClient } = require('mongodb');
 const Db = require('./lib/db');
 const plugins = require('./lib/plugins');
+const GlobalMethods = require('./lib/global_methods');
 
 program
   .version('0.0.1')
@@ -74,8 +76,14 @@ co(function*() {
 
   // Create a context for execution
   let context = vm.createContext(initContext);
+  // Internal state, not visible to repl
+  let state = { client, context };
   // Default db
-  context.db = Db.proxy(client.s.databaseName, client, context);
+  context.db = Db.proxy(client.s.databaseName, state);
+  // Add the replicaset object
+  context.rs = new ReplicaSet(state);
+  // Mix in global Methods
+  context = new GlobalMethods(state).decorate(context);
   // Add global special methods
   context.require = require;
 
@@ -100,7 +108,7 @@ co(function*() {
   }
 
   // Create a repl
-  const replServer = new REPL(client, context, {
+  const replServer = new REPL(state, context, {
     plugins: pluginInstances
   });
   // Start the repl

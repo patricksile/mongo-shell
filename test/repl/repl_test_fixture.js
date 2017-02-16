@@ -1,14 +1,15 @@
 const MongoClient = require('mongodb').MongoClient,
       vm = require('vm'),
       REPL = require('../../lib/repl'),
+      ReplicaSet = require('../../lib/rs'),
       Db = require('../../lib/db');
 
 class ReplTestFixture {
   constructor() {}
 
-  databaseSetup() {
+  databaseSetup(options = {}) {
     // Connect to mongodb
-    return MongoClient.connect('mongodb://localhost:27017/test_runner')
+    return MongoClient.connect(options.uri || 'mongodb://localhost:27017/test_runner')
       .then(client => {
         this.client = client;
 
@@ -28,10 +29,18 @@ class ReplTestFixture {
       require: require
     });
 
-    this.context.db = Db.proxy(this.client.s.databaseName, this.client, this.context);
+    const state = {
+      client: this.client, context: this.context,
+    };
+
+    // Allow state to be accessed
+    this.state = state;
+    // Add the proxies
+    this.context.db = Db.proxy(this.client.s.databaseName, state);
+    this.context.rs = new ReplicaSet(state);
 
     // Create a repl instance
-    let repl = new REPL(this.client, this.context, {
+    let repl = new REPL(state, {
       prompt: ''
     });
 
