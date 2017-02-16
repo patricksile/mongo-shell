@@ -13,15 +13,12 @@ describe('Repl JS Expressions tests', () => {
       // Execute command
       test.repl.eval('var a = 1', test.context, '', function(err, result) {
         assert.equal(null, err);
-        assert.equal(1, result);
+        assert.equal(1, test.context.a);
 
         // Render the repl final text
         let string = test.repl.writer(result);
         string = string.replace(/\n|\\n/g, '');
-
-        assert.equal(
-          '1'.trim(),
-          string.trim());
+        assert.equal(''.trim(), string.trim());
         done();
       });
     });

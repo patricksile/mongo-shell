@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const co = require('co');
+'use strict';
 const vm = require('vm');
 const fs = require('fs');
 const program = require('commander');
@@ -8,11 +8,12 @@ const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
-const { MongoClient } = require('mongodb');
+const { MongoClient, Cursor, Collection } = require('mongodb');
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
+const Assert = require('../lib/assert.js');
 
 program
   .version('0.0.1')
@@ -37,6 +38,22 @@ program
 //   console.log('');
 // });
 
+// monkey-patch `Cursor` for `itcount` support
+Cursor.prototype.itcount = async function() {
+  let count = 0;
+  while (await this.hasNext()) {
+    count++;
+    await this.next();
+  }
+
+  return count;
+};
+
+// monkey-patch `Collection` for `getIndexKeys`
+Collection.prototype.getIndexKeys = function() {
+  return this.indexes().then(indexes => indexes.map(i => i.key));
+};
+
 // Find any files in there
 const files = program.rawArgs.filter(x => {
   return x.indexOf('.js') !== -1 && x !== __filename;
@@ -57,70 +74,74 @@ for (let i = 0; i < program.rawArgs.length; i++) {
   }
 }
 
-co(function*() {
-  // Connect to mongodb
-  const client = yield MongoClient.connect(uri);
+(async function() {
+  try {
+    // Connect to mongodb
+    const client = await MongoClient.connect(uri);
 
-  // Attempt to instantiate all the plugins
-  const pluginInstances = [];
-  // Go over all the plugins
-  for (let name in plugins) {
-    pluginInstances.push(new plugins[name](client));
-  }
-
-  // Init context
-  const initContext = Object.assign({}, global, {});
-
-  // Let plugin's decorate the context
-  for (let i = 0; i < pluginInstances.length; i++) {
-    yield pluginInstances[i].decorateContext(initContext);
-  }
-
-  // Create a context for execution
-  let context = vm.createContext(initContext);
-  // Internal state, not visible to repl
-  let state = { client, context };
-  // Default db
-  context.db = Db.proxy(client.s.databaseName, state);
-  // Add the replicaset object
-  context.rs = new ReplicaSet(state);
-  // Add the sharded object
-  context.sh = new Sharded(state, console);
-
-  // Mixin naive methods
-  Native.decorate(context, state);
-  // Mix in global Methods
-  GlobalMethods.decorate(context, state);
-  // Add global special methods
-  context.require = require;
-
-  // Do we have files to execute
-  if (files.length > 0) {
-    // Execute each file
-    const executor = new Executor();
-
-    for (let i = 0; i < files.length; i++) {
-      // Read the file
-      const file = fs.readFileSync(files[i], 'utf8');
-      // Let's execute the file
-      yield executor.executeSync(file, context, {
-        detectCallbacks: true
-      });
+    // Attempt to instantiate all the plugins
+    const pluginInstances = [];
+    // Go over all the plugins
+    for (let name in plugins) {
+      pluginInstances.push(new plugins[name](client));
     }
 
-    // Shutdown mongodb connection
-    client.close();
-    // Cut short as we are done;
-    return;
-  }
+    // Init context
+    const initContext = Object.assign({}, global, {});
 
-  // Create a repl
-  const replServer = new REPL(state, context, {
-    plugins: pluginInstances
-  });
-  // Start the repl
-  state.repl = replServer.start();
-}).catch(err => {
-  console.log(err);
-  process.exit(0);
-});
+    // Let plugin's decorate the context
+    for (let i = 0; i < pluginInstances.length; i++) {
+      await pluginInstances[i].decorateContext(initContext);
+    }
+
+    // Create a context for execution
+    let context = vm.createContext(initContext);
+    // Internal state, not visible to repl
+    let state = { client, context };
+    // Default db
+    context.db = Db.proxy(client.s.databaseName, state);
+    // Add the replicaset object
+    context.rs = new ReplicaSet(state);
+    // Add the sharded object
+    context.sh = new Sharded(state, console);
+
+    // Mixin assertion methods
+    Assert.decorate(context, state);
+    // Mixin naive methods
+    Native.decorate(context, state);
+    // Mix in global Methods
+    GlobalMethods.decorate(context, state);
+    // Add global special methods
+    context.require = require;
+
+    // Do we have files to execute
+    if (files.length > 0) {
+      // Execute each file
+      const executor = new Executor();
+
+      for (let i = 0; i < files.length; i++) {
+        // Read the file
+        const file = fs.readFileSync(files[i], 'utf8');
+        // Let's execute the file
+        await executor.executeSync(file, context, {
+          detectCallbacks: true
+        });
+      }
+
+      // Shutdown mongodb connection
+      client.close();
+      // Cut short as we are done;
+      return;
+    }
+
+    // Create a repl
+    const replServer = new REPL(state, context, {
+      plugins: pluginInstances
+    });
+    // Start the repl
+    state.repl = replServer.start();
+  } catch (err) {
+    console.log(err);
+    process.exit(0);
+  }
+})();
