@@ -7,6 +7,7 @@ const program = require('commander');
 const Executor = require('./lib/executor');
 const REPL = require('./lib/repl');
 const ReplicaSet = require('./lib/rs');
+const Sharded = require('./lib/sh');
 const { MongoClient } = require('mongodb');
 const Db = require('./lib/db');
 const plugins = require('./lib/plugins');
@@ -82,6 +83,8 @@ co(function*() {
   context.db = Db.proxy(client.s.databaseName, state);
   // Add the replicaset object
   context.rs = new ReplicaSet(state);
+  // Add the sharded object
+  context.sh = new Sharded(state, console);
   // Mix in global Methods
   context = new GlobalMethods(state).decorate(context);
   // Add global special methods
@@ -114,6 +117,6 @@ co(function*() {
   // Start the repl
   replServer.start();
 }).catch(err => {
-  // console.log(err);
+  console.log(err);
   process.exit(0);
 });
