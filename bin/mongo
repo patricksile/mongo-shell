@@ -1,17 +1,18 @@
-'use strict';
+#!/usr/bin/env node
 
+'use strict';
 const co = require('co');
 const vm = require('vm');
 const fs = require('fs');
 const program = require('commander');
-const Executor = require('./lib/executor');
-const REPL = require('./lib/repl');
-const ReplicaSet = require('./lib/rs');
-const Sharded = require('./lib/sh');
+const Executor = require('../lib/executor');
+const REPL = require('../lib/repl');
+const ReplicaSet = require('../lib/rs');
+const Sharded = require('../lib/sh');
 const { MongoClient } = require('mongodb');
-const Db = require('./lib/db');
-const plugins = require('./lib/plugins');
-const GlobalMethods = require('./lib/global_methods');
+const Db = require('../lib/db');
+const plugins = require('../lib/plugins');
+const GlobalMethods = require('../lib/global_methods');
 
 program
   .version('0.0.1')
