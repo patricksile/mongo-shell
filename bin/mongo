@@ -90,7 +90,7 @@ co(function*() {
   // Mixin naive methods
   Native.decorate(context, state);
   // Mix in global Methods
-  context = new GlobalMethods(state).decorate(context);
+  GlobalMethods.decorate(context, state);
   // Add global special methods
   context.require = require;
 
