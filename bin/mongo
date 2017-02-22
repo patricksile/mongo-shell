@@ -3,7 +3,6 @@
 const co = require('co');
 const vm = require('vm');
 const fs = require('fs');
-const program = require('commander');
 const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
@@ -50,8 +49,13 @@ for (let i = 0; i < unknown.length; i++) {
 }
 
 co(function*() {
-  // Connect to mongodb
-  const client = yield MongoClient.connect(uri);
+  // Contains the mongodb client
+  let client = null;
+
+  // If --nodb is not defined
+  if(!options._all.nodb) {
+    client = yield MongoClient.connect(uri);
+  }
 
   // Attempt to instantiate all the plugins
   const pluginInstances = [];
@@ -72,8 +76,13 @@ co(function*() {
   let context = vm.createContext(initContext);
   // Internal state, not visible to repl
   let state = { client, context };
-  // Default db
-  context.db = Db.proxy(client.s.databaseName, state);
+
+  // If --nodb is not defined
+  if(!options._all.nodb) {
+    // Default db
+    context.db = Db.proxy(client.s.databaseName, state);
+  }
+
   // Add the replicaset object
   context.rs = new ReplicaSet(state);
   // Add the sharded object
