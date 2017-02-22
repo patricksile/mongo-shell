@@ -28,7 +28,7 @@
     "co": "^4.6.0",
     "columnify": "^1.5.4",
     "commander": "^2.9.0",
-    "falafel": "^2.0.0",
+    "falafel": "mbroadst/node-falafel#updated",
     "has-ansi": "^2.0.0",
     "mongodb": "^2.2.21"
   },
