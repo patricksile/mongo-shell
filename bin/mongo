@@ -16,14 +16,15 @@ const Native = require('../lib/native');
 // Command line options
 const getUsage = require('command-line-usage');
 const commandLineArgs = require('command-line-args');
-const { cmdLineOptions, cmdLineSections } = require('../lib/command_line');
+const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
 
 // Parse the command line
 const options = commandLineArgs(cmdLineOptions)
+// Usage screen
+const usage = getUsage(cmdLineSections)
 
 // If user requested help information
 if(options._all.help) {
-  const usage = getUsage(cmdLineSections)
   console.log(usage)
   process.exit(0);
 }
@@ -47,6 +48,14 @@ for (let i = 0; i < unknown.length; i++) {
     uri = arg.indexOf('mongodb://') === -1 ? `mongodb://${arg}` : arg;
   }
 }
+
+// Get the uriObject
+const uriObject = processor(uri, options._all);
+// Render as uri
+uri = uriObject.toString();
+// console.dir(uriObject)
+// console.log(uriObject.toString())
+// process.exit(0)
 
 co(function*() {
   // Contains the mongodb client
@@ -81,6 +90,12 @@ co(function*() {
   if(!options._all.nodb) {
     // Default db
     context.db = Db.proxy(client.s.databaseName, state);
+    // Query buildInfo to figure out if we are enterprise
+    const buildInfo = yield client.command({buildInfo:true});
+    // Are we enterprise, then set state to enterprise
+    if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
+      state.enterprise = true;
+    }
   }
 
   // Add the replicaset object
