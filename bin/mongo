@@ -14,31 +14,26 @@ const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
 
-program
-  .version('0.0.1')
-  .description('This shell allows for mixing legacy mongo shell javascript code with the modern node.js world of libraries.')
-  .usage('[db address] [file names (ending in .js)]')
-  // .option('-p, --peppers', 'Add peppers')
-  // .option('-P, --pineapple', 'Add pineapple')
-  // .option('-b, --bbq-sauce', 'Add bbq sauce')
-  // .option('-c, --cheese [type]', 'Add the specified type of cheese [marble]', 'marble');
-  .parse(process.argv);
-// program
-//   .command('help')
-//   .description('display verbose help')
-//   .action(function() {
-//     return "show something"
-//   });
-// program.on('--help', function(){
-//   console.log('  Examples:');
-//   console.log('');
-//   console.log('    $ custom-help --help');
-//   console.log('    $ custom-help -h');
-//   console.log('');
-// });
+// Command line options
+const getUsage = require('command-line-usage');
+const commandLineArgs = require('command-line-args');
+const { cmdLineOptions, cmdLineSections } = require('../lib/command_line');
+
+// Parse the command line
+const options = commandLineArgs(cmdLineOptions)
+
+// If user requested help information
+if(options._all.help) {
+  const usage = getUsage(cmdLineSections)
+  console.log(usage)
+  process.exit(0);
+}
+
+// Unknown
+const unknown = options._unknown || [];
 
 // Find any files in there
-const files = program.rawArgs.filter(x => {
+const files = unknown.filter(x => {
   return x.indexOf('.js') !== -1 && x !== __filename;
 });
 
@@ -46,14 +41,11 @@ const files = program.rawArgs.filter(x => {
 let uri = 'mongodb://localhost:27017/test';
 
 // Get the connection string if any specified
-for (let i = 0; i < program.rawArgs.length; i++) {
-  if (program.rawArgs[i] === __filename) {
-    if (!program.rawArgs[i + 1]) break;
-    let arg = program.rawArgs[i + 1].trim();
-    // Test if this is a valid uri string
-    if (typeof arg === 'string' && arg.indexOf('.js') === -1) {
-      uri = arg.indexOf('mongodb://') === -1 ? `mongodb://${arg}` : arg;
-    }
+for (let i = 0; i < unknown.length; i++) {
+  let arg = unknown[i].trim();
+  // Test if this is a valid uri string
+  if (typeof arg === 'string' && arg.indexOf('.js') === -1) {
+    uri = arg.indexOf('mongodb://') === -1 ? `mongodb://${arg}` : arg;
   }
 }
 
