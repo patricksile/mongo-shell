@@ -49,10 +49,15 @@ for (let i = 0; i < unknown.length; i++) {
   }
 }
 
-// Get the uriObject
-const uriObject = processor(uri, options._all);
+// Get the uriObject and additional MongoClient options
+const {
+  uriObject, connectionOptions
+} = processor(uri, options._all);
 // Render as uri
 uri = uriObject.toString();
+// console.log("====================================")
+// console.dir(uri)
+// console.dir(connectionOptions)
 // console.dir(uriObject)
 // console.log(uriObject.toString())
 // process.exit(0)
@@ -63,7 +68,7 @@ co(function*() {
 
   // If --nodb is not defined
   if(!options._all.nodb) {
-    client = yield MongoClient.connect(uri);
+    client = yield MongoClient.connect(uri, connectionOptions);
   }
 
   // Attempt to instantiate all the plugins
@@ -84,7 +89,7 @@ co(function*() {
   // Create a context for execution
   let context = vm.createContext(initContext);
   // Internal state, not visible to repl
-  let state = { client, context };
+  let state = { client, context, connectionOptions };
 
   // If --nodb is not defined
   if(!options._all.nodb) {
