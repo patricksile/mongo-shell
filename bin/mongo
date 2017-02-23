@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
-const co = require('co');
+'use strict';
 const vm = require('vm');
 const fs = require('fs');
 const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
-const { MongoClient } = require('mongodb');
+const { MongoClient, Cursor, Collection } = require('mongodb');
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
+const Assert = require('../lib/assert.js');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -31,6 +32,22 @@ if(options._all.help) {
 
 // Unknown
 const unknown = options._unknown || [];
+
+// monkey-patch `Cursor` for `itcount` support
+Cursor.prototype.itcount = async function() {
+  let count = 0;
+  while (await this.hasNext()) {
+    count++;
+    await this.next();
+  }
+
+  return count;
+};
+
+// monkey-patch `Collection` for `getIndexKeys`
+Collection.prototype.getIndexKeys = function() {
+  return this.indexes().then(indexes => indexes.map(i => i.key));
+};
 
 // Find any files in there
 const files = unknown.filter(x => {
@@ -55,93 +72,88 @@ const {
 } = processor(uri, options._all);
 // Render as uri
 uri = uriObject.toString();
-// console.log("====================================")
-// console.dir(uri)
-// console.dir(connectionOptions)
-// console.dir(uriObject)
-// console.log(uriObject.toString())
-// process.exit(0)
 
-co(function*() {
-  // Contains the mongodb client
-  let client = null;
+(async function() {
+  try {
+    // Connect to mongodb
+    const client = await MongoClient.connect(uri, connectionOptions);
 
-  // If --nodb is not defined
-  if(!options._all.nodb) {
-    client = yield MongoClient.connect(uri, connectionOptions);
-  }
+    // Attempt to instantiate all the plugins
+    const pluginInstances = [];
+    // Go over all the plugins
+    for (let name in plugins) {
+      pluginInstances.push(new plugins[name](client));
+    }
 
-  // Attempt to instantiate all the plugins
-  const pluginInstances = [];
-  // Go over all the plugins
-  for (let name in plugins) {
-    pluginInstances.push(new plugins[name](client));
-  }
+    // Init context
+    const initContext = Object.assign({}, global, {});
 
-  // Init context
-  const initContext = Object.assign({}, global, {});
+    // Let plugin's decorate the context
+    for (let i = 0; i < pluginInstances.length; i++) {
+      await pluginInstances[i].decorateContext(initContext);
+    }
 
-  // Let plugin's decorate the context
-  for (let i = 0; i < pluginInstances.length; i++) {
-    yield pluginInstances[i].decorateContext(initContext);
-  }
+    // Create a context for execution
+    let context = vm.createContext(initContext);
+    // Internal state, not visible to repl
+    let state = { client, context, connectionOptions };
 
-  // Create a context for execution
-  let context = vm.createContext(initContext);
-  // Internal state, not visible to repl
-  let state = { client, context, connectionOptions };
+    // If --nodb is not defined
+    if(!options._all.nodb) {
+      // Default db
+      context.db = Db.proxy(client.s.databaseName, state);
+      // Query buildInfo to figure out if we are enterprise
+      const buildInfo = yield client.command({buildInfo:true});
+      // Are we enterprise, then set state to enterprise
+      if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
+        state.enterprise = true;
+      }
+    }
 
-  // If --nodb is not defined
-  if(!options._all.nodb) {
     // Default db
     context.db = Db.proxy(client.s.databaseName, state);
-    // Query buildInfo to figure out if we are enterprise
-    const buildInfo = yield client.command({buildInfo:true});
-    // Are we enterprise, then set state to enterprise
-    if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
-      state.enterprise = true;
+    // Add the replicaset object
+    context.rs = new ReplicaSet(state);
+    // Add the sharded object
+    context.sh = new Sharded(state, console);
+
+    // Mixin assertion methods
+    Assert.decorate(context, state);
+    // Mixin naive methods
+    Native.decorate(context, state);
+    // Mix in global Methods
+    GlobalMethods.decorate(context, state);
+    // Add global special methods
+    context.require = require;
+
+    // Do we have files to execute
+    if (files.length > 0) {
+      // Execute each file
+      const executor = new Executor();
+
+      for (let i = 0; i < files.length; i++) {
+        // Read the file
+        const file = fs.readFileSync(files[i], 'utf8');
+        // Let's execute the file
+        await executor.executeSync(file, context, {
+          detectCallbacks: true
+        });
+      }
+
+      // Shutdown mongodb connection
+      client.close();
+      // Cut short as we are done;
+      return;
     }
+
+    // Create a repl
+    const replServer = new REPL(state, context, {
+      plugins: pluginInstances
+    });
+    // Start the repl
+    state.repl = replServer.start();
+  } catch (err) {
+    console.log(err);
+    process.exit(0);
   }
-
-  // Add the replicaset object
-  context.rs = new ReplicaSet(state);
-  // Add the sharded object
-  context.sh = new Sharded(state, console);
-
-  // Mixin naive methods
-  Native.decorate(context, state);
-  // Mix in global Methods
-  GlobalMethods.decorate(context, state);
-  // Add global special methods
-  context.require = require;
-
-  // Do we have files to execute
-  if (files.length > 0) {
-    // Execute each file
-    const executor = new Executor();
-
-    for (let i = 0; i < files.length; i++) {
-      // Read the file
-      const file = fs.readFileSync(files[i], 'utf8');
-      // Let's execute the file
-      yield executor.executeSync(file, context, {
-        detectCallbacks: true
-      });
-    }
-
-    // Shutdown mongodb connection
-    client.close();
-    // Cut short as we are done;
-    return;
-  }
-
-  // Create a repl
-  const replServer = new REPL(state, context, {
-    plugins: pluginInstances
-  });
-  // Start the repl
-  state.repl = replServer.start();
-}).catch(err => {
-  console.log(err);
-  process.exit(0);
-});
+})();
