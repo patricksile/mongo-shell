@@ -13,6 +13,7 @@ const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
 const Assert = require('../lib/assert.js');
+const Explainable = require('../lib/legacy/explainable');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -20,13 +21,13 @@ const commandLineArgs = require('command-line-args');
 const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
 
 // Parse the command line
-const options = commandLineArgs(cmdLineOptions)
+const options = commandLineArgs(cmdLineOptions);
 // Usage screen
-const usage = getUsage(cmdLineSections)
+const usage = getUsage(cmdLineSections);
 
 // If user requested help information
-if(options._all.help) {
-  console.log(usage)
+if (options._all.help) {
+  console.log(usage);
   process.exit(0);
 }
 
@@ -47,6 +48,13 @@ Cursor.prototype.itcount = async function() {
 // monkey-patch `Collection` for `getIndexKeys`
 Collection.prototype.getIndexKeys = function() {
   return this.indexes().then(indexes => indexes.map(i => i.key));
+};
+
+/**
+ * This is the user-facing method for creating an Explainable from a collection.
+ */
+Collection.prototype.explain = function(verbosity) {
+  return new Explainable(this, verbosity);
 };
 
 // Find any files in there
@@ -107,7 +115,7 @@ uri = uriObject.toString();
       // Query buildInfo to figure out if we are enterprise
       const buildInfo = await client.command({ buildInfo: true });
       // Are we enterprise, then set state to enterprise
-      if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
+      if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') !== -1) {
         state.enterprise = true;
       }
     }
@@ -131,13 +139,11 @@ uri = uriObject.toString();
     // Do we have files to execute
     if (files.length > 0) {
       // Execute each file
-      const executor = new Executor();
-
       for (let i = 0; i < files.length; i++) {
         // Read the file
         const file = fs.readFileSync(files[i], 'utf8');
         // Let's execute the file
-        await executor.executeSync(file, context, {
+        await Executor.executeSync(file, context, {
           detectCallbacks: true
         });
 
@@ -148,7 +154,8 @@ uri = uriObject.toString();
       }
 
       // Shutdown mongodb connection
-      client.close();
+      await client.close();
+
       // Cut short as we are done;
       return;
     }
@@ -161,7 +168,8 @@ uri = uriObject.toString();
     // Start the repl
     state.repl = replServer.start();
   } catch (err) {
-    client.close();
+    console.log(err);
+    await client.close();
     process.exit(1);
   }
 })();
