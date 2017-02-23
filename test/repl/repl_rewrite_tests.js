@@ -38,13 +38,6 @@ describe('Repl Rewrite Tests', function() {
       let actual = rewriteScript(input);
       assert.equal(actual, expected);
     });
-
-    it('should await functions passed as arguments if they contain async methods', function() {
-      let input = 'assert.throws(function() { t.find(querySpec).sort(sortSpec).batchSize(1000).itcount(); });';
-      let expected = 'assert.throws(await async function() { await t.find(querySpec).sort(sortSpec).batchSize(1000).itcount(); });';
-      let actual = rewriteScript(input);
-      assert.equal(actual, expected);
-    });
   });
 
   it('should wrap awaited methods beginning with `!`', function() {
@@ -101,5 +94,21 @@ describe('Repl Rewrite Tests', function() {
     let expected = 'doTest = async function() { await t.findOne({}); }; await doTest();';
     let actual = rewriteScript(input);
     assert.equal(actual, expected);
+  });
+
+  describe('assert.throws', function() {
+    it('should rewrite async methods in `assert.throws` to use async form', function() {
+      let input = 'assert.throws(function() { t.find({$and: 4}).toArray(); });';
+      let expected = 'await assert.throws(async function() { await t.find({$and: 4}).toArray(); });';
+      let actual = rewriteScript(input);
+      assert.equal(actual, expected);
+    });
+
+    it('should rewrite async methods in `assert.throws` to use async form within a function', function() {
+      let input = 'function check() { assert.throws(function() { t.find({$and: 4}).toArray(); }); }';
+      let expected = 'async function check() { await assert.throws(async function() { await t.find({$and: 4}).toArray(); }); }';
+      let actual = rewriteScript(input);
+      assert.equal(actual, expected);
+    });
   });
 });
