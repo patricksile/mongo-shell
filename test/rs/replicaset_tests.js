@@ -153,7 +153,7 @@ describe('ReplicaSet tests', function() {
         assert.equal(1, members.length);
 
         // Mix in the connect method
-        new GlobalMethods(test.state).decorate(test.state.context);
+        GlobalMethods.decorate(test.state.context, test.state);
 
         // We need to connect to the secondary
         result = yield eval(test, `connect("mongodb://${members[0].name}")`, test.context);

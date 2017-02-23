@@ -27,6 +27,8 @@
     "cliff": "^0.1.10",
     "co": "^4.6.0",
     "columnify": "^1.5.4",
+    "command-line-args": "^4.0.1",
+    "command-line-usage": "^4.0.0",
     "commander": "^2.9.0",
     "falafel": "mbroadst/node-falafel#updated",
     "has-ansi": "^2.0.0",
