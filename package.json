@@ -32,7 +32,9 @@
     "commander": "^2.9.0",
     "falafel": "mbroadst/node-falafel#updated",
     "has-ansi": "^2.0.0",
-    "mongodb": "^2.2.21"
+    "mkdirp": "^0.5.1",
+    "mongodb": "^2.2.21",
+    "npmi": "^2.0.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
