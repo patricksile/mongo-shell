@@ -13,7 +13,8 @@ const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
 const Assert = require('../lib/assert.js');
-const Explainable = require('../lib/legacy/explainable');
+const LegacyCollection = require('../lib/legacy/legacy_collection');
+const LegacyCursor = require('../lib/legacy/legacy_cursor');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -34,28 +35,9 @@ if (options._all.help) {
 // Unknown
 const unknown = options._unknown || [];
 
-// monkey-patch `Cursor` for `itcount` support
-Cursor.prototype.itcount = async function() {
-  let count = 0;
-  while (await this.hasNext()) {
-    count++;
-    await this.next();
-  }
-
-  return count;
-};
-
-// monkey-patch `Collection` for `getIndexKeys`
-Collection.prototype.getIndexKeys = function() {
-  return this.indexes().then(indexes => indexes.map(i => i.key));
-};
-
-/**
- * This is the user-facing method for creating an Explainable from a collection.
- */
-Collection.prototype.explain = function(verbosity) {
-  return new Explainable(this, verbosity);
-};
+// Add legacy methods to driver classes
+LegacyCollection.mixin(Collection);
+LegacyCursor.mixin(Cursor);
 
 // Find any files in there
 const files = unknown.filter(x => {
