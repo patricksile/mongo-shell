@@ -111,4 +111,11 @@ describe('Repl Rewrite Tests', function() {
       assert.equal(actual, expected);
     });
   });
+
+  it('should wrap an async call with parens if subsequent calls on the object are not async', function() {
+    let input = 'db.getCollectionNames().forEach(function(x) {});';
+    let expected = '(await db.getCollectionNames()).forEach(function(x) {});';
+    let actual = rewriteScript(input);
+    assert.equal(actual, expected);
+  });
 });
