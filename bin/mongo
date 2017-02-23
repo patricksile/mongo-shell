@@ -103,7 +103,7 @@ uri = uriObject.toString();
       // Default db
       context.db = Db.proxy(client.s.databaseName, state);
       // Query buildInfo to figure out if we are enterprise
-      const buildInfo = yield client.command({buildInfo:true});
+      const buildInfo = await client.command({buildInfo:true});
       // Are we enterprise, then set state to enterprise
       if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
         state.enterprise = true;
