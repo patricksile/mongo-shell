@@ -74,9 +74,11 @@ const {
 uri = uriObject.toString();
 
 (async function() {
+  let client;
+
   try {
     // Connect to mongodb
-    const client = await MongoClient.connect(uri, connectionOptions);
+    client = await MongoClient.connect(uri, connectionOptions);
 
     // Attempt to instantiate all the plugins
     const pluginInstances = [];
@@ -99,11 +101,11 @@ uri = uriObject.toString();
     let state = { client, context, connectionOptions };
 
     // If --nodb is not defined
-    if(!options._all.nodb) {
+    if (!options._all.nodb) {
       // Default db
       context.db = Db.proxy(client.s.databaseName, state);
       // Query buildInfo to figure out if we are enterprise
-      const buildInfo = await client.command({buildInfo:true});
+      const buildInfo = await client.command({ buildInfo: true });
       // Are we enterprise, then set state to enterprise
       if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
         state.enterprise = true;
@@ -138,6 +140,11 @@ uri = uriObject.toString();
         await executor.executeSync(file, context, {
           detectCallbacks: true
         });
+
+        // Did we receive an error?
+        if (context.__executingError) {
+          throw context.__executingError;
+        }
       }
 
       // Shutdown mongodb connection
@@ -150,10 +157,11 @@ uri = uriObject.toString();
     const replServer = new REPL(state, context, {
       plugins: pluginInstances
     });
+
     // Start the repl
     state.repl = replServer.start();
   } catch (err) {
-    console.log(err);
-    process.exit(0);
+    client.close();
+    process.exit(1);
   }
 })();
