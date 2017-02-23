@@ -3,6 +3,7 @@
 'use strict';
 const vm = require('vm');
 const fs = require('fs');
+const os = require('os');
 const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
@@ -84,6 +85,28 @@ uri = uriObject.toString();
     for (let name in plugins) {
       pluginInstances.push(new plugins[name](client));
     }
+
+    // Load additional plugins loaded by the user
+    try {
+      // Get the plugin file list
+      const _path = `${os.homedir()}/.mongo/plugins.json`;
+      // Now attempt to read the file
+      const pluginsConfig = JSON.parse(fs.readFileSync(_path, 'utf8'));
+      // For each of the plugins load and attempt to initialize
+      for (var _module of pluginsConfig.plugins) {
+        // Require the module
+        const plugin = require(_module[1]);
+        // Add the plugin to the list
+        pluginInstances.push(new plugin(client));
+        // console.log("------------------------------- load plugin")
+        // console.dir(plugin)
+      }
+    } catch (err) {
+      // console.log(err)
+    }
+
+    // console.log("------------------------------- load plugin")
+    // console.dir(pluginInstances)
 
     // Init context
     const initContext = Object.assign({}, global, {});
