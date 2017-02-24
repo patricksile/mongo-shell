@@ -91,12 +91,11 @@ uri = uriObject.toString();
 
     // Load additional plugins loaded by the user
     try {
-      // Get the plugin file list
-      const _path = `${os.homedir()}/.mongo/plugins.json`;
-      // Now attempt to read the file
-      const pluginsConfig = JSON.parse(fs.readFileSync(_path, 'utf8'));
+      // Get the plugin list
+      const _configuration = await configuration.read();
+      const plugins = _configuration.plugins;
       // For each of the plugins load and attempt to initialize
-      for (var _module of pluginsConfig.plugins) {
+      for (var _module of plugins) {
         try {
           // Require the module
           const plugin = require(_module[1]);
@@ -176,7 +175,7 @@ uri = uriObject.toString();
 
     // Create a repl
     const replServer = new REPL(state, context, {
-      plugins: pluginInstances, configuration: configuration
+      plugins: pluginInstances
     });
     // Start the repl
     state.repl = replServer.start();
