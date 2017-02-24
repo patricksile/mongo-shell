@@ -2,6 +2,7 @@ const MongoClient = require('mongodb').MongoClient,
       vm = require('vm'),
       REPL = require('../../lib/repl'),
       ReplicaSet = require('../../lib/rs'),
+      Configuration = require('../../lib/configuration'),
       Db = require('../../lib/db');
 
 class ReplTestFixture {
@@ -30,7 +31,9 @@ class ReplTestFixture {
     });
 
     const state = {
-      client: this.client, context: this.context,
+      client: this.client,
+      context: this.context,
+      configuration: new Configuration(`${__dirname}/../../tmp/configuration.json`),
     };
 
     // Allow state to be accessed

@@ -13,6 +13,7 @@ lib-cov
 tmp/
 shell
 db
+tmp/
 .build/
 
 # Coverage directory used by tools like istanbul
