@@ -8,6 +8,7 @@ const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
 const { MongoClient, Cursor, Collection } = require('mongodb');
+const MongoDb = require('mongodb').Db;
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
@@ -38,6 +39,8 @@ const unknown = options._unknown || [];
 // Add legacy methods to driver classes
 LegacyCollection.mixin(Collection);
 LegacyCursor.mixin(Cursor);
+
+MongoDb.prototype.forceReadMode = function() { /* no-op */ };
 
 // Find any files in there
 const files = unknown.filter(x => {
