@@ -8,7 +8,6 @@ class ExamplePlugin {
   }
 
   decorateContext(context) {
-    console.log("ExamplePlugin decorateContext")
     return Promise.resolve(Object.assign(context, {
       example: {}
     }));

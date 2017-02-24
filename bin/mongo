@@ -14,6 +14,7 @@ const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
 const Assert = require('../lib/assert.js');
+const Configuration = require('../lib/configuration');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -76,6 +77,8 @@ uri = uriObject.toString();
 
 (async function() {
   try {
+    // Handles everything related to the shell configuration file
+    const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
     // Connect to mongodb
     const client = await MongoClient.connect(uri, connectionOptions);
 
@@ -94,12 +97,14 @@ uri = uriObject.toString();
       const pluginsConfig = JSON.parse(fs.readFileSync(_path, 'utf8'));
       // For each of the plugins load and attempt to initialize
       for (var _module of pluginsConfig.plugins) {
-        // Require the module
-        const plugin = require(_module[1]);
-        // Add the plugin to the list
-        pluginInstances.push(new plugin(client));
-        // console.log("------------------------------- load plugin")
-        // console.dir(plugin)
+        try {
+          // Require the module
+          const plugin = require(_module[1]);
+          // Add the plugin to the list
+          pluginInstances.push(new plugin(client));
+        } catch(err) {
+          console.error(`could not load plugin from ${_module[1]}`);
+        }
       }
     } catch (err) {
       // console.log(err)
@@ -119,7 +124,7 @@ uri = uriObject.toString();
     // Create a context for execution
     let context = vm.createContext(initContext);
     // Internal state, not visible to repl
-    let state = { client, context, connectionOptions };
+    let state = { client, context, connectionOptions, configuration };
 
     // If --nodb is not defined
     if(!options._all.nodb) {
@@ -171,7 +176,7 @@ uri = uriObject.toString();
 
     // Create a repl
     const replServer = new REPL(state, context, {
-      plugins: pluginInstances
+      plugins: pluginInstances, configuration: configuration
     });
     // Start the repl
     state.repl = replServer.start();
