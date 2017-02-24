@@ -82,13 +82,6 @@ describe('Repl Rewrite Tests', function() {
     assert.equal(actual, expected);
   });
 
-  it('should wrap `drop` operations in a try/catch to emulate legacy behavior', function() {
-    let input = 't.drop();';
-    let expected = "try { await t.drop(); } catch(err) { console.warn('WARN: ' + err.message); };";
-    let actual = rewriteScript(input);
-    assert.equal(actual, expected);
-  });
-
   it('should await async methods that are assigned to a variable', function() {
     let input = 'doTest = function() { t.findOne({}); }; doTest();';
     let expected = 'doTest = async function() { await t.findOne({}); }; await doTest();';
