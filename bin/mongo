@@ -126,6 +126,7 @@ uri = uriObject.toString();
         const file = fs.readFileSync(files[i], 'utf8');
         // Let's execute the file
         await Executor.executeSync(file, context, {
+          filename: files[i],
           detectCallbacks: true
         });
 
