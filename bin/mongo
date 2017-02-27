@@ -8,6 +8,7 @@ const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
 const { MongoClient, Cursor, Collection } = require('mongodb');
+const AggregationCursor = require('mongodb/lib/aggregation_cursor');
 const MongoDb = require('mongodb').Db;
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
@@ -16,6 +17,8 @@ const Native = require('../lib/native');
 const Assert = require('../lib/assert.js');
 const LegacyCollection = require('../lib/legacy/legacy_collection');
 const LegacyCursor = require('../lib/legacy/legacy_cursor');
+const LegacyGlobal = require('../lib/legacy/legacy_global');
+const JsTest = require('../lib/legacy/jstest');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -39,6 +42,7 @@ const unknown = options._unknown || [];
 // Add legacy methods to driver classes
 LegacyCollection.mixin(Collection);
 LegacyCursor.mixin(Cursor);
+LegacyCursor.mixin(AggregationCursor);
 
 MongoDb.prototype.forceReadMode = function() { /* no-op */ };
 
@@ -87,6 +91,10 @@ uri = uriObject.toString();
     for (let i = 0; i < pluginInstances.length; i++) {
       await pluginInstances[i].decorateContext(initContext);
     }
+
+    // JsTest (currently) static plugin
+    JsTest.decorate(initContext);
+    LegacyGlobal.decorate(initContext);
 
     // Create a context for execution
     let context = vm.createContext(initContext);
