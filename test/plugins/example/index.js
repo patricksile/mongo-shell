@@ -4,15 +4,17 @@ class ExamplePlugin {
   }
 
   namespace() {
-    // console.log("ExamplePlugin namespace")
     return 'example';
   }
 
   decorateContext(context) {
-    // console.log("ExamplePlugin decorate context")
     return Promise.resolve(Object.assign(context, {
       example: new Plugin()
     }));
+  }
+
+  help(string) {
+    return "Example plugin help";
   }
 }
 

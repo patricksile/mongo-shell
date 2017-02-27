@@ -83,24 +83,24 @@ uri = uriObject.toString();
     const client = await MongoClient.connect(uri, connectionOptions);
 
     // Attempt to instantiate all the plugins
-    const pluginInstances = [];
+    const _plugins = [];
     // Go over all the plugins
     for (let name in plugins) {
-      pluginInstances.push(new plugins[name](client));
+      _plugins.push(new plugins[name](client));
     }
 
     // Load additional plugins loaded by the user
     try {
       // Get the plugin list
       const _configuration = await configuration.read();
-      const plugins = _configuration.plugins;
+      const configurationPlugins = _configuration.plugins;
       // For each of the plugins load and attempt to initialize
-      for (var _module of plugins) {
+      for (var _module of configurationPlugins) {
         try {
           // Require the module
           const plugin = require(_module[1]);
           // Add the plugin to the list
-          pluginInstances.push(new plugin(client));
+          _plugins.push(new plugin(client));
         } catch(err) {
           console.error(`could not load plugin from ${_module[1]}`);
         }
@@ -116,14 +116,14 @@ uri = uriObject.toString();
     const initContext = Object.assign({}, global, {});
 
     // Let plugin's decorate the context
-    for (let i = 0; i < pluginInstances.length; i++) {
-      await pluginInstances[i].decorateContext(initContext);
+    for (let i = 0; i < _plugins.length; i++) {
+      await _plugins[i].decorateContext(initContext);
     }
 
     // Create a context for execution
     let context = vm.createContext(initContext);
     // Internal state, not visible to repl
-    let state = { client, context, connectionOptions, configuration };
+    let state = { client, context, connectionOptions, configuration, plugins: _plugins };
 
     // If --nodb is not defined
     if(!options._all.nodb) {
@@ -175,7 +175,7 @@ uri = uriObject.toString();
 
     // Create a repl
     const replServer = new REPL(state, context, {
-      plugins: pluginInstances
+      plugins: _plugins
     });
     // Start the repl
     state.repl = replServer.start();
