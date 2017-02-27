@@ -1,8 +1,32 @@
 'use strict';
 const assert = require('assert'),
-      rewriteScript = require('../../lib/executor').rewriteScript;
+      rewriteScript = require('../../lib/executor').rewriteScript,
+      preprocess = require('../../lib/repl').preprocess;
 
 describe('Repl Rewrite Tests', function() {
+  describe('preprocess', function() {
+    it('should wrap async assignments with a wrapper for immediate execution', function() {
+      let input = 'x = await t.find(querySpec).count();';
+      let expected = '(() => { async function _wrap() { return global.x = await t.find(querySpec).count(); } return _wrap(); })();';
+      let actual = preprocess(input);
+      assert.equal(actual, expected);
+    });
+
+    it('should wrap async method args with a wrapper for imemdiate execution (1)', function() {
+      let input = 'assert.writeOK(await t.mycoll.insert({}));';
+      let expected = '(() => { async function _wrap() { return assert.writeOK(await t.mycoll.insert({})); } return _wrap(); })();';
+      let actual = preprocess(input);
+      assert.equal(actual, expected);
+    });
+
+    it('should wrap async method args with a wrapper for imemdiate execution (2)', function() {
+      let input = 'assert.writeOK(10, await t.mycoll.insert({}));';
+      let expected = '(() => { async function _wrap() { return assert.writeOK(10, await t.mycoll.insert({})); } return _wrap(); })();';
+      let actual = preprocess(input);
+      assert.equal(actual, expected);
+    });
+  });
+
   it('should rewrite an async method to a generator with await', function() {
     let input = 'function test() { t.find(querySpec).sort(sortSpec).batchSize(1000).count(); }';
     let expected = 'async function test() { await t.find(querySpec).sort(sortSpec).batchSize(1000).count(); }';
