@@ -9,12 +9,18 @@ const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
 const { MongoClient, Cursor, Collection } = require('mongodb');
+const AggregationCursor = require('mongodb/lib/aggregation_cursor');
+const MongoDb = require('mongodb').Db;
 const Db = require('../lib/db');
 const plugins = require('../lib/plugins');
 const GlobalMethods = require('../lib/global_methods');
 const Native = require('../lib/native');
 const Assert = require('../lib/assert.js');
 const Configuration = require('../lib/configuration');
+const LegacyCollection = require('../lib/legacy/legacy_collection');
+const LegacyCursor = require('../lib/legacy/legacy_cursor');
+const LegacyGlobal = require('../lib/legacy/legacy_global');
+const JsTest = require('../lib/legacy/jstest');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -22,34 +28,25 @@ const commandLineArgs = require('command-line-args');
 const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
 
 // Parse the command line
-const options = commandLineArgs(cmdLineOptions)
+const options = commandLineArgs(cmdLineOptions);
 // Usage screen
-const usage = getUsage(cmdLineSections)
+const usage = getUsage(cmdLineSections);
 
 // If user requested help information
-if(options._all.help) {
-  console.log(usage)
+if (options._all.help) {
+  console.log(usage);
   process.exit(0);
 }
 
 // Unknown
 const unknown = options._unknown || [];
 
-// monkey-patch `Cursor` for `itcount` support
-Cursor.prototype.itcount = async function() {
-  let count = 0;
-  while (await this.hasNext()) {
-    count++;
-    await this.next();
-  }
+// Add legacy methods to driver classes
+LegacyCollection.mixin(Collection);
+LegacyCursor.mixin(Cursor);
+LegacyCursor.mixin(AggregationCursor);
 
-  return count;
-};
-
-// monkey-patch `Collection` for `getIndexKeys`
-Collection.prototype.getIndexKeys = function() {
-  return this.indexes().then(indexes => indexes.map(i => i.key));
-};
+MongoDb.prototype.forceReadMode = function() { /* no-op */ };
 
 // Find any files in there
 const files = unknown.filter(x => {
@@ -76,11 +73,13 @@ const {
 uri = uriObject.toString();
 
 (async function() {
+  let client;
+
   try {
     // Handles everything related to the shell configuration file
     const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
     // Connect to mongodb
-    const client = await MongoClient.connect(uri, connectionOptions);
+    client = await MongoClient.connect(uri, connectionOptions);
 
     // Attempt to instantiate all the plugins
     const _plugins = [];
@@ -120,19 +119,23 @@ uri = uriObject.toString();
       await _plugins[i].decorateContext(initContext);
     }
 
+    // JsTest (currently) static plugin
+    JsTest.decorate(initContext);
+    LegacyGlobal.decorate(initContext);
+
     // Create a context for execution
     let context = vm.createContext(initContext);
     // Internal state, not visible to repl
     let state = { client, context, connectionOptions, configuration, plugins: _plugins };
 
     // If --nodb is not defined
-    if(!options._all.nodb) {
+    if (!options._all.nodb) {
       // Default db
       context.db = Db.proxy(client.s.databaseName, state);
       // Query buildInfo to figure out if we are enterprise
-      const buildInfo = await client.command({buildInfo:true});
+      const buildInfo = await client.command({ buildInfo: true });
       // Are we enterprise, then set state to enterprise
-      if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') != -1) {
+      if (Array.isArray(buildInfo.modules) && buildInfo.modules.indexOf('enterprise') !== -1) {
         state.enterprise = true;
       }
     }
@@ -156,19 +159,24 @@ uri = uriObject.toString();
     // Do we have files to execute
     if (files.length > 0) {
       // Execute each file
-      const executor = new Executor();
-
       for (let i = 0; i < files.length; i++) {
         // Read the file
         const file = fs.readFileSync(files[i], 'utf8');
         // Let's execute the file
-        await executor.executeSync(file, context, {
+        await Executor.executeSync(file, context, {
+          filename: files[i],
           detectCallbacks: true
         });
+
+        // Did we receive an error?
+        if (context.__executingError) {
+          throw context.__executingError;
+        }
       }
 
       // Shutdown mongodb connection
-      client.close();
+      await client.close();
+
       // Cut short as we are done;
       return;
     }
@@ -177,10 +185,12 @@ uri = uriObject.toString();
     const replServer = new REPL(state, context, {
       plugins: _plugins
     });
+
     // Start the repl
     state.repl = replServer.start();
   } catch (err) {
     console.log(err);
-    process.exit(0);
+    await client.close();
+    process.exit(1);
   }
 })();
