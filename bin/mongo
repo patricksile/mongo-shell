@@ -8,7 +8,7 @@ const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
-const { MongoClient, Cursor, Collection } = require('mongodb');
+const { MongoClient, Cursor, Collection, ObjectId } = require('mongodb');
 const AggregationCursor = require('mongodb/lib/aggregation_cursor');
 const MongoDb = require('mongodb').Db;
 const Db = require('../lib/db');
@@ -47,6 +47,8 @@ LegacyCursor.mixin(Cursor);
 LegacyCursor.mixin(AggregationCursor);
 
 MongoDb.prototype.forceReadMode = function() { /* no-op */ };
+
+Object.defineProperty(ObjectId.prototype, 'str', { get: function() { return this.toString(); } });
 
 // Find any files in there
 const files = unknown.filter(x => {
