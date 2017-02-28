@@ -38,6 +38,8 @@ if (options._all.help) {
   process.exit(0);
 }
 
+let state;
+
 // Unknown
 const unknown = options._unknown || [];
 
@@ -47,6 +49,7 @@ LegacyCursor.mixin(Cursor);
 LegacyCursor.mixin(AggregationCursor);
 
 MongoDb.prototype.forceReadMode = function() { /* no-op */ };
+MongoDb.prototype.getDB = function(dbName) { return new Db(dbName, state); };
 
 Object.defineProperty(ObjectId.prototype, 'str', { get: function() { return this.toString(); } });
 
@@ -128,7 +131,7 @@ uri = uriObject.toString();
     // Create a context for execution
     let context = vm.createContext(initContext);
     // Internal state, not visible to repl
-    let state = { client, context, connectionOptions, configuration, plugins: _plugins };
+    state = { client, context, connectionOptions, configuration, plugins: _plugins };
 
     // If --nodb is not defined
     if (!options._all.nodb) {
