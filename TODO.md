@@ -4,7 +4,6 @@
 - Support `.mongorc.js`.
 - Support --sslFIPSMode by restricting ssl ciphers used.
   * Will not support now as it requires a node.js binary compiled using fips argument at configure time.
-- Support --sslCRLFile function
 - Support --eval
 - Support --norc
 - Support --shell
@@ -22,3 +21,14 @@
 
 ## Atlas admin plugin
 -
+
+
+
+# ALL DONE
+- Support --sslCRLFile function
+- Add missing top level commands
+  * show users
+  * show roles
+  * show databases
+  * show log <logname>
+  * show logs
