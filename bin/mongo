@@ -127,9 +127,6 @@ uri = uriObject.toString();
       // console.log(err)
     }
 
-    // console.log("------------------------------- load plugin")
-    // console.dir(pluginInstances)
-
     // Init context
     const initContext = Object.assign({}, global, {});
 
@@ -203,14 +200,16 @@ uri = uriObject.toString();
       plugins: _plugins
     });
 
-    // Start the repl
-    state.repl = replServer.start();
-
     // Do we have eval then run it real quick
     if (options._all.eval) {
-      return replServer.__eval(`${options._all.eval}`, state.context, 'global', () => {
+      return replServer.__eval(`${options._all.eval}`, context, 'global', () => {
         if (!options._all.shell) {
           return process.exit(0);
+        }
+
+        // Copy the global value to the top level
+        for (var name in context.global) {
+          context[name] = context.global[name];
         }
 
         // Start the repl
