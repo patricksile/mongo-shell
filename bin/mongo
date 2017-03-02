@@ -83,8 +83,12 @@ uri = uriObject.toString();
   try {
     // Handles everything related to the shell configuration file
     const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
-    // Connect to mongodb
-    client = await MongoClient.connect(uri, connectionOptions);
+
+    // If --nodb is not defined
+    if (!options._all.nodb) {
+      // Connect to mongodb
+      client = await MongoClient.connect(uri, connectionOptions);
+    }
 
     // Attempt to instantiate all the plugins
     const _plugins = [];
@@ -145,8 +149,6 @@ uri = uriObject.toString();
       }
     }
 
-    // Default db
-    context.db = Db.proxy(client.s.databaseName, state);
     // Add the replicaset object
     context.rs = new ReplicaSet(state);
     // Add the sharded object
