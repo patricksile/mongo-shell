@@ -4,9 +4,7 @@
 - Support `.mongorc.js`.
 - Support --sslFIPSMode by restricting ssl ciphers used.
   * Will not support now as it requires a node.js binary compiled using fips argument at configure time.
-- Support --eval
 - Support --norc
-- Support --shell
 
 ## Help
 - Make a better help rendered.
@@ -25,6 +23,8 @@
 
 
 # ALL DONE
+- Support --shell
+- Support --eval
 - Support --sslCRLFile function
 - Add missing top level commands
   * show users

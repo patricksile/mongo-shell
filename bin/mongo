@@ -21,11 +21,17 @@ const LegacyCollection = require('../lib/legacy/legacy_collection');
 const LegacyCursor = require('../lib/legacy/legacy_cursor');
 const LegacyGlobal = require('../lib/legacy/legacy_global');
 const JsTest = require('../lib/legacy/jstest');
+const packageJSON = require('../package.json');
 
 // Command line options
 const getUsage = require('command-line-usage');
 const commandLineArgs = require('command-line-args');
 const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
+
+const {
+  palette,
+  colorize
+} = require('../lib/colors');
 
 // Parse the command line
 const options = commandLineArgs(cmdLineOptions);
@@ -81,11 +87,15 @@ uri = uriObject.toString();
   let client;
 
   try {
+    // Print out some information about the shell
+    console.log(palette.string.green(`MongoDB Shell CLI version ${packageJSON.version}`));
+
     // Handles everything related to the shell configuration file
     const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
 
     // If --nodb is not defined
     if (!options._all.nodb) {
+      console.log(palette.string.bold(`connecting to: ${uri}`));
       // Connect to mongodb
       client = await MongoClient.connect(uri, connectionOptions);
     }
@@ -192,6 +202,21 @@ uri = uriObject.toString();
     const replServer = new REPL(state, context, {
       plugins: _plugins
     });
+
+    // Start the repl
+    state.repl = replServer.start();
+
+    // Do we have eval then run it real quick
+    if (options._all.eval) {
+      return replServer.__eval(`${options._all.eval}`, state.context, 'global', () => {
+        if (!options._all.shell) {
+          return process.exit(0);
+        }
+
+        // Start the repl
+        state.repl = replServer.start();
+      });
+    }
 
     // Start the repl
     state.repl = replServer.start();
