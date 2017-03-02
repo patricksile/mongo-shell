@@ -21,11 +21,17 @@ const LegacyCollection = require('../lib/legacy/legacy_collection');
 const LegacyCursor = require('../lib/legacy/legacy_cursor');
 const LegacyGlobal = require('../lib/legacy/legacy_global');
 const JsTest = require('../lib/legacy/jstest');
+const packageJSON = require('../package.json');
 
 // Command line options
 const getUsage = require('command-line-usage');
 const commandLineArgs = require('command-line-args');
 const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
+
+const {
+  palette,
+  colorize
+} = require('../lib/colors');
 
 // Parse the command line
 const options = commandLineArgs(cmdLineOptions);
@@ -79,12 +85,29 @@ uri = uriObject.toString();
 
 (async function() {
   let client;
+  let mongoRc;
 
   try {
+    // Print out some information about the shell
+    console.log(palette.string.green(`MongoDB Shell CLI version ${packageJSON.version}`));
+
     // Handles everything related to the shell configuration file
     const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
-    // Connect to mongodb
-    client = await MongoClient.connect(uri, connectionOptions);
+
+    // If --nodb is not defined
+    if (!options._all.nodb) {
+      console.log(palette.string.bold(`connecting to: ${uri}`));
+      // Connect to mongodb
+      client = await MongoClient.connect(uri, connectionOptions);
+    }
+
+    // Did the user specify --norc
+    if (!options._all.norc) {
+      // Attempt to read the .mongorc.js file from $HOME
+      try {
+        mongoRc = fs.readFileSync(`${os.homedir()}/.mongorc.js`, 'utf8');
+      } catch(err) {}
+    }
 
     // Attempt to instantiate all the plugins
     const _plugins = [];
@@ -98,6 +121,7 @@ uri = uriObject.toString();
       // Get the plugin list
       const _configuration = await configuration.read();
       const configurationPlugins = _configuration.plugins;
+
       // For each of the plugins load and attempt to initialize
       for (var _module of configurationPlugins) {
         try {
@@ -112,9 +136,6 @@ uri = uriObject.toString();
     } catch (err) {
       // console.log(err)
     }
-
-    // console.log("------------------------------- load plugin")
-    // console.dir(pluginInstances)
 
     // Init context
     const initContext = Object.assign({}, global, {});
@@ -145,8 +166,6 @@ uri = uriObject.toString();
       }
     }
 
-    // Default db
-    context.db = Db.proxy(client.s.databaseName, state);
     // Add the replicaset object
     context.rs = new ReplicaSet(state);
     // Add the sharded object
@@ -160,6 +179,16 @@ uri = uriObject.toString();
     GlobalMethods.decorate(context, state);
     // Add global special methods
     context.require = require;
+
+    // Do we have a .mongorc.js file
+    // then evaluate it in the context of the context
+    if (mongoRc) {
+      // Let's execute the file
+      await Executor.executeSync(mongoRc, context, {
+        filename: `${os.homedir()}/.mongorc.js`,
+        detectCallbacks: true
+      });
+    }
 
     // Do we have files to execute
     if (files.length > 0) {
@@ -190,6 +219,14 @@ uri = uriObject.toString();
     const replServer = new REPL(state, context, {
       plugins: _plugins
     });
+
+    // Do we have eval parameter, then execute it
+    if (options._all.eval) {
+      await Executor.executeSync(options._all.eval, context, {
+        filename: `global`,
+        detectCallbacks: true
+      });
+    }
 
     // Start the repl
     state.repl = replServer.start();

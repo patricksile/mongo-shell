@@ -3,10 +3,8 @@
 ## Command Line
 - Support `.mongorc.js`.
 - Support --sslFIPSMode by restricting ssl ciphers used.
-- Support --sslCRLFile function
-- Support --eval
+  * Will not support now as it requires a node.js binary compiled using fips argument at configure time.
 - Support --norc
-- Support --shell
 
 ## Help
 - Make a better help rendered.
@@ -20,4 +18,17 @@
 - Output Mongoid classes.
 
 ## Atlas admin plugin
-- 
+-
+
+
+
+# ALL DONE
+- Support --shell
+- Support --eval
+- Support --sslCRLFile function
+- Add missing top level commands
+  * show users
+  * show roles
+  * show databases
+  * show log <logname>
+  * show logs
