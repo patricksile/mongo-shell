@@ -33,7 +33,7 @@
     "falafel": "mbroadst/node-falafel#updated",
     "has-ansi": "^2.0.0",
     "mkdirp": "^0.5.1",
-    "mongodb": "^2.2.21",
+    "mongodb": "mongodb/node-mongodb-native#2.2",
     "npmi": "^2.0.1"
   },
   "devDependencies": {
