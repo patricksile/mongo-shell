@@ -1,8 +1,9 @@
 const docs = require('./docs');
 
 class ExamplePlugin {
-  constructor(client) {
+  constructor(client, options = {}) {
     this.client = client;
+    this.log = options.log || console.log;
   }
 
   namespace() {

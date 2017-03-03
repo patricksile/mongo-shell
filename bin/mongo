@@ -79,7 +79,7 @@ for (let i = 0; i < unknown.length; i++) {
 // Get the uriObject and additional MongoClient options
 const {
   uriObject, connectionOptions
-} = processor(uri, options._all);
+} = processor(uri, console.log, options._all);
 // Render as uri
 uri = uriObject.toString();
 
@@ -120,7 +120,7 @@ uri = uriObject.toString();
     const _plugins = [];
     // Go over all the plugins
     for (let name in plugins) {
-      _plugins.push(new plugins[name](client));
+      _plugins.push(new plugins[name](client, { log: console.log }));
     }
 
     // Load additional plugins loaded by the user
@@ -135,7 +135,7 @@ uri = uriObject.toString();
           // Require the module
           const plugin = require(_module[1]);
           // Add the plugin to the list
-          _plugins.push(new plugin(client));
+          _plugins.push(new plugin(client, { log: console.log }));
         } catch(err) {
           console.error(`could not load plugin from ${_module[1]}`);
         }
@@ -174,7 +174,7 @@ uri = uriObject.toString();
     }
 
     // Add the replicaset object
-    context.rs = new ReplicaSet(state);
+    context.rs = new ReplicaSet(state, console);
     // Add the sharded object
     context.sh = new Sharded(state, console);
 
@@ -223,8 +223,8 @@ uri = uriObject.toString();
     }
 
     // Create a repl
-    const replServer = new REPL(state, context, {
-      plugins: _plugins
+    const replServer = new REPL(state, {
+      plugins: _plugins, log: console.log
     });
 
     // Do we have eval parameter, then execute it
