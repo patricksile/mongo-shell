@@ -94,9 +94,16 @@ uri = uriObject.toString();
     // Handles everything related to the shell configuration file
     const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
 
+    process.on('unhandledRejection', (reason, p) => {
+      console.log(reason);
+    });
+
     // If --nodb is not defined
     if (!options._all.nodb) {
       console.log(palette.string.bold(`connecting to: ${uri}`));
+      // Ensure no buffer
+      connectionOptions.poolSize = 1;
+      connectionOptions.bufferMaxEntries = 0;
       // Connect to mongodb
       client = await MongoClient.connect(uri, connectionOptions);
     }

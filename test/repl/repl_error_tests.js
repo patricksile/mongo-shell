@@ -36,7 +36,6 @@ describe('Repl Error tests', () => {
       // Execute command
       test.repl.eval('db.tests2.__', test.context, '', function(err, result) {
         assert.equal(null, err);
-        assert.equal('', result);
 
         done();
       });
