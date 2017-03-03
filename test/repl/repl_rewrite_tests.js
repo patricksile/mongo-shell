@@ -135,4 +135,11 @@ describe('Repl Rewrite Tests', function() {
     let actual = rewriteScript(input);
     assert.equal(actual, expected);
   });
+
+  it('should not wrap explain with async decorations', function() {
+    let input = 'db.basic_test_1.explain().find({});';
+    let expected = 'db.basic_test_1.explain().find({});';
+    let actual = rewriteScript(input);
+    assert.equal(actual, expected);
+  });
 });
