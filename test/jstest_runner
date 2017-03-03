@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+
+'use strict';
+const fs = require('fs'),
+      p = require('path'),
+      chalk = require('chalk'),
+      cp = require('child_process');
+
+if (process.argv.length < 3) {
+  console.log(`usage: ${process.argv[1]} <path-to-scripts>`);
+  process.exit(1);
+}
+
+const SKIP_TESTS = [
+  // for `startParallelShell`:
+  'compact_keeps_indexes', 'count10', 'count_plan_summary', 'coveredIndex3', 'currentop',
+  'cursora', 'distinct3', 'evalc', 'evald', 'explain3', 'find_and_modify_concurrent_update',
+  'fsync', 'geo_update_btree', 'kill_cursors', 'killop_drop_collection', 'loadserverscripts',
+  'mr_killop', 'queryoptimizer3', 'remove9', 'removeb', 'removec', 'shellstartparallel',
+  'updatef',
+
+  // for treating `Cursor` === `Array`
+  'sort6', 'basic7',
+
+  // requires C++ `benchRun`/`benchRunSync`
+  'bench_test1', 'bench_test2', 'bench_test3'
+
+];
+
+const mongoPath = p.join(process.cwd(), '..', 'bin', 'mongo');
+function runTest(path, callback) {
+  cp.execFile(mongoPath, [ path ], (err, stdout, stderr) => {
+    if (err && err.code !== 0) {
+      console.log(`  ${chalk.red('✘ ' + path)}`);
+      if (!!stderr.trim()) console.log(stderr.trim());
+      if (!!stdout.trim()) console.log(stdout.trim());
+      callback(false);
+    } else {
+      console.log(`  ${chalk.green('✔ ' + path)}`);
+      callback(true);
+    }
+  });
+}
+
+let path = process.argv[2];
+let files = fs.readdirSync(path).filter(f => SKIP_TESTS.indexOf(p.basename(f, '.js')) === -1);
+
+let passed = 0, failed = 0, completed = 0, active = 0, idx = 0;
+function completionHandler(passOrFail) {
+  active--;
+  completed++;
+  if (passOrFail) { passed++; } else { failed++; }
+  if (completed === files.length) {
+    console.log('\n\n');
+    console.log(`  ${chalk.green(passed + ' passing')}`);
+    console.log(`  ${chalk.red(failed + ' failing')}`);
+  } else {
+    runTests(idx);
+  }
+}
+
+const concurrentRuns = 15;
+function runTests(currentIndex) {
+  for (let i = currentIndex; i < concurrentRuns - active; ++i) {
+    let fileName = files[i];
+    if (fileName === undefined) {
+      console.log('idx: ', idx, ', files.length: ', files.length);
+    } else {
+      runTest(p.join(path, files[i]), completionHandler);
+    }
+
+    idx++;
+  }
+}
+
+runTests(idx);
+
