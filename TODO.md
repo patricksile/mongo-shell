@@ -1,14 +1,11 @@
 # TODO
 
 ## Command Line
-- Support `.mongorc.js`.
 - Support --sslFIPSMode by restricting ssl ciphers used.
   * Will not support now as it requires a node.js binary compiled using fips argument at configure time.
-- Support --norc
+- Enable extended json output support.
 
 ## Help
-- Make a better help rendered.
-- Extend the examples to help better.
 
 ## ODM Export plugin
 - Use Schema types plugin to create statistical model for types.
@@ -20,9 +17,9 @@
 ## Atlas admin plugin
 -
 
-
-
 # ALL DONE
+- Support `.mongorc.js`.
+- Support --norc
 - Support --shell
 - Support --eval
 - Support --sslCRLFile function
@@ -32,3 +29,5 @@
   * show databases
   * show log <logname>
   * show logs
+- Make a better help rendered.
+- Extend the examples to help better.
