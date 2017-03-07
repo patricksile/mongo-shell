@@ -22,7 +22,12 @@ describe('Repl Rewrite Tests', function() {
     {
       name: 'should wrap assignment with async operations with a wrapper for immediate execution',
       input: 'x = t.find(querySpec).count();',
-      expected: '(() => { async function _wrap() { return global.x = await t.find(querySpec).count(); } return _wrap(); })();'
+      expected: 'x = (() => { async function _wrap() { return await t.find(querySpec).count(); } return _wrap(); })();'
+    },
+    {
+      name: 'should wrap VariableAssignment expressions with async wrapper if they are assigned to async method results',
+      input: 'var res = db.test.find({}).toArray();',
+      expected: 'var res = (() => { async function _wrap() { return await db.test.find({}).toArray(); } return _wrap(); })();'
     },
     {
       name: 'should wrap async method args with a wrapper for imemdiate execution (1)',
