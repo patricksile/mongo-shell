@@ -1,12 +1,11 @@
 'use strict';
 const assert = require('assert'),
-      rewriteScript = require('../../lib/executor').rewriteScript,
-      preprocess = require('../../lib/repl').preprocess;
+      rewriteScript = require('../../lib/executor').rewriteScript;
 
 function describeEx(desc, fn, tests) {
   describe(desc, function() {
     tests.forEach(test => {
-      it(test.name, function() {
+      (test.hasOwnProperty('only') && test.only ? it.only : it)(test.name, function() {
         let actual = fn(test.input);
         assert.equal(actual, test.expected);
       });
@@ -14,21 +13,25 @@ function describeEx(desc, fn, tests) {
   });
 }
 
+function rewriteScriptREPL(input) {
+  return rewriteScript(input, { repl: true });
+}
+
 describe('Repl Rewrite Tests', function() {
-  describeEx('preprocess', preprocess, [
+  describeEx('async wrapping (for REPL)', rewriteScriptREPL, [
     {
-      name: 'should wrap async assignments with a wrapper for immediate execution',
-      input: 'x = await t.find(querySpec).count();',
+      name: 'should wrap assignment with async operations with a wrapper for immediate execution',
+      input: 'x = t.find(querySpec).count();',
       expected: '(() => { async function _wrap() { return global.x = await t.find(querySpec).count(); } return _wrap(); })();'
     },
     {
       name: 'should wrap async method args with a wrapper for imemdiate execution (1)',
-      input: 'assert.writeOK(await t.mycoll.insert({}));',
+      input: 'assert.writeOK(t.mycoll.insert({}));',
       expected: '(() => { async function _wrap() { return assert.writeOK(await t.mycoll.insert({})); } return _wrap(); })();'
     },
     {
       name: 'should wrap async method args with a wrapper for imemdiate execution (2)',
-      input: 'assert.writeOK(10, await t.mycoll.insert({}));',
+      input: 'assert.writeOK(10, t.mycoll.insert({}));',
       expected: '(() => { async function _wrap() { return assert.writeOK(10, await t.mycoll.insert({})); } return _wrap(); })();'
     }
   ]);
