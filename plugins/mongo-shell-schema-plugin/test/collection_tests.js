@@ -9,8 +9,8 @@ describe('Mongo Shell Schema Plugin', () => {
       co(function*() {
         // Get the client
         const client = yield connect('mongodb://localhost:27017/schema_test');
-        // Clean up
-        yield client.collection('test1').deleteMany({});
+        // Drop the database
+        yield client.dropDatabase();
         // Add a bunch of documents
         yield client.collection('test1').insertMany([
           {a:1}, {b:'string'}, {c:3.54}, {a:3, c:3}
@@ -34,8 +34,8 @@ describe('Mongo Shell Schema Plugin', () => {
       co(function*() {
         // Get the client
         const client = yield connect('mongodb://localhost:27017/schema_test');
-        // Clean up
-        yield client.collection('test1').deleteMany({});
+        // Drop the database
+        yield client.dropDatabase();
         // Add a bunch of documents
         yield client.collection('test1').insertMany([
           {a:1}, {b:'string'}, {c:3.54}, {a:3, c:3}
@@ -57,8 +57,8 @@ describe('Mongo Shell Schema Plugin', () => {
       co(function*() {
         // Get the client
         const client = yield connect('mongodb://localhost:27017/schema_test');
-        // Clean up
-        yield client.collection('test1').deleteMany({});
+        // Drop the database
+        yield client.dropDatabase();
         // Add a bunch of documents
         yield client.collection('test1').insertMany([
           {a:1}, {b:'string'}, {c:3.54}, {a:3, c:3}
@@ -82,15 +82,13 @@ describe('Mongo Shell Schema Plugin', () => {
       co(function*() {
         // Get the client
         const client = yield connect('mongodb://localhost:27017/schema_test');
-        // Clean up
-        yield client.collection('test1').deleteMany({});
+        // Drop the database
+        yield client.dropDatabase();
         // Add a bunch of documents
         yield client.collection('test1').insertMany([
           {a:1}, {b:'string'}, {c:3.54}, {a:3, c:3}
         ]);
 
-        // Clean up
-        yield client.collection('test2').deleteMany({});
         // Add a bunch of documents
         yield client.collection('test2').insertMany([
           {a:1}, {b:'string'}, {c:3.54}, {a:3, c:3}

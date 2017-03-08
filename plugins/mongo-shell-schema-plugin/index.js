@@ -1,5 +1,10 @@
 const docs = require('./docs');
+const fs = require('fs');
+const pluralize = require('pluralize');
+const capitalize = require('capitalize');
 const parseSchema = require('mongodb-schema');
+const MongooseGenerator = require('./lib/mongoose');
+const modes = ['mongoose'];
 
 class OdmGenerator {
   constructor(client, options = {}) {
@@ -13,7 +18,7 @@ class OdmGenerator {
 
   decorateContext(context) {
     return Promise.resolve(Object.assign(context, {
-      schema: new Plugin(this.client)
+      schema: new Plugin(this.client, this.options)
     }));
   }
 
@@ -39,8 +44,14 @@ class OdmGenerator {
 }
 
 class Plugin {
-  constructor(client) {
+  constructor(client, options = {}) {
     this.client = client;
+    this.options = options;
+    this.log = options.log || console.log;
+    // Contains all the generators
+    this.generators = {
+      'mongoose': new MongooseGenerator(client)
+    };
   }
 
   /**
@@ -49,7 +60,7 @@ class Plugin {
    * @return {String}
    */
   collection(name) {
-    return new Collection(this.client, this.client.collection(name));
+    return new Collection(this.client, this.client.collection(name), this.generators, this.options);
   }
 
   /**
@@ -68,12 +79,63 @@ class Plugin {
 
     return results;
   }
+
+  /**
+   * Returns the collection schema
+   * @param [options] Object Options passed to the generator.
+   * @param [options.target] String the target ODM, can be one of [mongoose].
+   * @param [options.output=.] String the output directory.
+   * @param [options.preview=false] Boolean return the ODM class preview.
+   * @param [options.mode=sample] String the sampling method, can be one of [sample,full].
+   * @param [options.size=1000] Number the sample size if [options.mode=sample] is defined.
+   * @return {Promise}
+   */
+  async generate(options = {}) {
+    if (!options.target) throw new Error('target must be set to one of the supported targets [mongoose]');
+    if (modes.indexOf(options.target) == -1) throw new Error('target must be set to one of the supported targets [mongoose]');
+
+    // Set default options
+    if (!options.mode) options.mode = 'sample';
+    if (!options.size) options.size = 1000;
+    if (!options.output) options.output = '.';
+
+    const collections = await this.client.listCollections().toArray();
+    const results = [];
+
+    // Let's determine the generator we are going to use
+    const generator = this.generators[options.target];
+
+    for (const col of collections) {
+      this.log(`Generating Schema for collection ${col.name}`);
+      const schema = await parseSchemaPromise(this.client
+        .collection(col.name), options);
+      this.log(`Generating ${options.target} ODM Schema for collection ${col.name}`);
+
+      // Singular name
+      const singular = pluralize.singular(col.name);
+      const singularCapitalized = capitalize(singular);
+      // Lets generate the actual template file
+      const file = await generator.generate(singularCapitalized, schema, options);      
+      if (options.preview === true) {
+        results.push(file);
+      } else {
+        fs.writeFileSync(`${options.output}/${singular}.js`, file, 'utf8');
+        this.log(`Generating ${options.target} ODM Schema for collection ${col.name} to file ${options.output}/${singular}.js`);        
+      }
+    }
+
+    if (options.preview) return results;
+    return `Successfully generated ${options.target} ODM Schema`;
+  }
 }
 
 class Collection {
-  constructor(client, collection) {
+  constructor(client, collection, generators, options = {}) {
     this.client = client;
     this.collection = collection;
+    this.generators = generators;
+    this.options = options;
+    this.log = options.log || console.log;
   }
 
   /**
@@ -82,6 +144,56 @@ class Collection {
    */
   async schema(options = { mode: 'sample', size: 1000 }) {
     return await parseSchemaPromise(this.collection, options);
+  }
+
+  /**
+   * Returns the collection schema
+   * @param [options] Object Options passed to the generator.
+   * @param [options.target] String the target ODM, can be one of [mongoose].
+   * @param [options.output=.] String the output directory.
+   * @param [options.preview=false] Boolean return the ODM class preview.
+   * @param [options.mode=sample] String the sampling method, can be one of [sample,full].
+   * @param [options.size=1000] Number the sample size if [options.mode=sample] is defined.
+   * @return {Promise}
+   */
+  async generate(options = {}) {
+    if (!options.target) throw new Error('target must be set to one of the supported targets [mongoose]');
+    if (modes.indexOf(options.target) == -1) throw new Error('target must be set to one of the supported targets [mongoose]');
+
+    // Set default options
+    if (!options.mode) options.mode = 'sample';
+    if (!options.size) options.size = 1000;
+    if (!options.output) options.output = '.';
+
+    // console.log("-------------------- generate")
+    // console.dir(options)
+    this.log(`Generating Schema for collection ${this.collection.collectionName}`);
+    // Get the schema
+    const schema = await this.schema(options);
+
+    // Let's determine the generator we are going to use
+    const generator = this.generators[options.target];
+
+    // console.log("-------------------- schema")
+    // console.log(JSON.stringify(schema, null, 2))
+
+    this.log(`Generating ${options.target} ODM Schema for collection ${this.collection.collectionName}`);
+
+    // Singular name
+    const singular = pluralize.singular(this.collection.collectionName);
+    const singularCapitalized = capitalize(singular);
+    // Lets generate the actual template file
+    const file = await generator.generate(singularCapitalized, schema, options);
+
+    // If we are generating a file
+    if (options.preview === true) {
+      return file;
+    } else {
+      fs.writeFileSync(`${options.output}/${singular}.js`, file, 'utf8');
+      this.log(`Generating ${options.target} ODM Schema for collection ${this.collection.collectionName} to file ${options.output}/${singular}.js`);
+    }
+    
+    return `Successfully generated ${options.target} ODM Schema`;
   }
 }
 

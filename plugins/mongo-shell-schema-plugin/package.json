@@ -20,8 +20,11 @@
   "author": "Christian Kvalheim",
   "license": "Apache-2.0",
   "dependencies": {
+    "capitalize": "^1.0.0",
+    "ejs": "^2.5.6",
     "mongodb": "^2.2.24",
-    "mongodb-schema": "^6.1.0"
+    "mongodb-schema": "^6.1.0",
+    "pluralize": "^4.0.0"
   },
   "devDependencies": {
     "co": "^4.6.0",
