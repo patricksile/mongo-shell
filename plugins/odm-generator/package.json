@@ -1,0 +1,25 @@
+{
+  "name": "odm-generator",
+  "version": "1.0.0",
+  "description": "Generates ODM definitions for multiple targets, including mongoose",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "mongo": {
+    "plugin": {
+      "type": "shell"
+    }
+  },
+  "keywords": [
+    "odm",
+    "mongodb",
+    "generator"
+  ],
+  "author": "Christian Kvalheim",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "mongodb": "^2.2.24",
+    "mongodb-schema": "^6.1.0"
+  }
+}
