@@ -1,6 +1,5 @@
 const ReplTestFixture = require('./repl_test_fixture'),
       co = require('co'),
-      rmdir = require('rmdir'),
       assert = require('assert');
 
 let test = new ReplTestFixture();
@@ -10,6 +9,7 @@ after(() => test.databaseTeardown());
 describe('Repl Output tests', () => {
   describe('output change', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly switch to extjson and then back to shell', function(done) {
       co(function*() {

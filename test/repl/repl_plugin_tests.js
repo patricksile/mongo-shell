@@ -10,6 +10,7 @@ after(() => test.databaseTeardown());
 describe('Repl Plugin tests', () => {
   describe('plugin install', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly exercise plugin shell command', function(done) {
       co(function*() {
@@ -65,6 +66,9 @@ describe('Repl Plugin tests', () => {
   });
 
   describe('exercise plugin', () => {
+    beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
+
     it('should correctly call plugin function', function(done) {
       co(function*() {
         try {

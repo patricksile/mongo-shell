@@ -50,6 +50,10 @@ class ReplTestFixture {
     // Start the repl
     this.repl = repl.start();
   }
+
+  teardown() {
+    this.repl.close();
+  }
 }
 
 module.exports = ReplTestFixture;

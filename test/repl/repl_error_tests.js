@@ -8,6 +8,7 @@ after(() => test.databaseTeardown());
 describe('Repl Error tests', () => {
   describe('parser error handling', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly return sensible error on only providing db and collection', function(done) {
       // Execute command

@@ -8,6 +8,7 @@ after(() => test.databaseTeardown());
 describe('Repl JS Expressions tests', () => {
   describe('value setting', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly handle a global value expression expression [var a = 1]', function(done) {
       // Execute command

@@ -21,6 +21,7 @@ after(() => test.databaseTeardown());
 describe('Repl Basic tests', function() {
   describe('basic operations', function() {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly return results for find()', async function() {
       await executeRepl(test, 'db.basic_test_1.insertOne({a:1})', test.context);

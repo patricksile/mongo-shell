@@ -8,6 +8,7 @@ after(() => test.databaseTeardown());
 describe('Repl Helper tests', () => {
   describe('Admin helpers', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly call currentOp method', function(done) {
       // Execute command

@@ -14,6 +14,7 @@ function parseResult(str) {
 describe('Repl CRUD tests', () => {
   describe('insert tests', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly insert a single document using insertOne', function(done) {
       // Execute command
@@ -53,6 +54,7 @@ describe('Repl CRUD tests', () => {
 
   describe('update tests', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly upsert a single document using updateOne', function(done) {
       test.repl.eval('db.tests2.updateOne({ a1: 1 }, { a1: 1 }, { upsert: true })', test.context, '', function(err, result) {
@@ -133,6 +135,7 @@ describe('Repl CRUD tests', () => {
 
   describe('delete tests', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
     it('should correctly delete a single document using deleteOne', function(done) {
       // Insert a test doc
