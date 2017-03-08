@@ -38,6 +38,11 @@ describe('Repl Rewrite Tests', function() {
       name: 'should wrap async method args with a wrapper for imemdiate execution (2)',
       input: 'assert.writeOK(10, t.mycoll.insert({}));',
       expected: '(() => { async function _wrap() { return assert.writeOK(10, await t.mycoll.insert({})); } return _wrap(); })();'
+    },
+    {
+      name: 'should not wrap for-loop if loop contains async operation',
+      input: 'for(var i = 0; i < 100; i++) db.basic_test_3.insertOne({a:i})',
+      expected: 'for(var i = 0; i < 100; i++) await db.basic_test_3.insertOne({a:i})'
     }
   ]);
 
