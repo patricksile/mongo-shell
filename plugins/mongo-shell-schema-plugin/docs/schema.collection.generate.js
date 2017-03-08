@@ -96,8 +96,8 @@ module.exports = {
   "isClass": false,
   "isEvent": false,
   "ignore": false,
-  "line": 37,
-  "codeStart": 47,
+  "line": 41,
+  "codeStart": 51,
   "code": "generate(options = {}) {\n  const self = this;\n\n  return co(function*() {\n    if (!options.target) throw new Error('target must be set to one of the supported targets [mongoose]');\n    if (modes.indexOf(options.target) == -1) throw new Error('target must be set to one of the supported targets [mongoose]');\n\n    // Set default options\n    if (!options.mode) options.mode = 'sample';\n    if (!options.size) options.size = 1000;\n    if (!options.output) options.output = '.';\n\n    self.log(`Generating Schema for collection ${self.collection.collectionName}`);\n    // Get the schema\n    const schema = yield self.schema(options);\n\n    // Let's determine the generator we are going to use\n    const generator = self.generators[options.target];\n    self.log(`Generating ${options.target} ODM Schema for collection ${self.collection.collectionName}`);\n\n    // Singular name\n    const singular = pluralize.singular(self.collection.collectionName);\n    const singularCapitalized = capitalize(singular);\n    // Lets generate the actual template file\n    const file = yield generator.generate(singularCapitalized, schema, options);\n\n    // If we are generating a file\n    if (options.preview === true) {\n      return file;\n    } else {\n      fs.writeFileSync(`${options.output}/${singular}.js`, file, 'utf8');\n      self.log(`Generating ${options.target} ODM Schema for collection ${self.collection.collectionName} to file ${options.output}/${singular}.js`);\n    }\n    \n    return `Successfully generated ${options.target} ODM Schema`;\n  });\n}\n}\n\nmodule.exports = Collection;",
   "ctx": {
     "type": "method",

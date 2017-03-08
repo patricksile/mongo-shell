@@ -31,6 +31,10 @@ class Collection {
    * @return {Promise}
    */
   schema(options = { mode: 'sample', size: 1000 }) {
+    // Set default options
+    if (!options.mode) options.mode = 'sample';
+    if (!options.size) options.size = 1000;
+    // Generate the schema
     return parseSchemaPromise(this.collection, options);
   }
 

@@ -2,37 +2,41 @@ const dox = require('dox');
 const fs = require('fs');
 const mkdirp = require('mkdirp');
 
-// Settings
-const outputDir = `${__dirname}/docs`;
-
 // name space configurations
-const files = [
-  `${__dirname}/collection.js`,
-];
+const namespaces = {
+  'schema': [
+    `${__dirname}/index.js`,
+  ],
+  'schema.collection': [
+    `${__dirname}/collection.js`
+  ]
+};
 
 // Create docs directory
-mkdirp.sync(outputDir);
+mkdirp.sync(`${__dirname}/docs`);
 
 // List of final index file
 const indexes = {};
 
 // Iterate over all the namespaces and generate the files
-for (let i = 0; i < files.length; i++) {
-  const code = fs.readFileSync(files[i], 'utf8');
-  const obj = dox.parseComments(code, {raw: true});
+for (let namespace in namespaces) {
+  for (let i = 0; i < namespaces[namespace].length; i++) {
+    const code = fs.readFileSync(namespaces[namespace][i], 'utf8');
+    const obj = dox.parseComments(code, {raw: true});
 
-  // Iterate over all the object
-  obj.forEach(element => {
-    if (element.ctx.type === 'method') {
-      fs.writeFileSync(
-        `${outputDir}/${element.ctx.name}.js`,
-        `module.exports = ${JSON.stringify(element, null, 2)}`,
-        'utf8');
+    // Iterate over all the object
+    obj.forEach(element => {
+      if (element.ctx.type === 'method') {
+        fs.writeFileSync(
+          `${__dirname}/docs/${namespace}.${element.ctx.name}.js`,
+          `module.exports = ${JSON.stringify(element, null, 2)}`,
+          'utf8');
 
-      // Add the file and method to the indexes
-      indexes[`${element.ctx.name}`] = `./${element.ctx.name}`;
-    }
-  });
+        // Add the file and method to the indexes
+        indexes[`${namespace}.${element.ctx.name}`] = `./${namespace}.${element.ctx.name}`;
+      }
+    });
+  }
 }
 
 // Strings
@@ -50,6 +54,6 @@ ${strings.join(',\n')}
 `;
 
 // Write the indexes file
-fs.writeFileSync(`${outputDir}/index.js`, template, 'utf8');
+fs.writeFileSync(`${__dirname}/docs/index.js`, template, 'utf8');
 
 console.dir(indexes);

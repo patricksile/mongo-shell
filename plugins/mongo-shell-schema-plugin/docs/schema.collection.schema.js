@@ -50,7 +50,7 @@ module.exports = {
   "ignore": false,
   "line": 27,
   "codeStart": 33,
-  "code": "schema(options = { mode: 'sample', size: 1000 }) {\n  return parseSchemaPromise(this.collection, options);\n}",
+  "code": "schema(options = { mode: 'sample', size: 1000 }) {\n  // Set default options\n  if (!options.mode) options.mode = 'sample';\n  if (!options.size) options.size = 1000;\n  // Generate the schema\n  return parseSchemaPromise(this.collection, options);\n}",
   "ctx": {
     "type": "method",
     "constructor": "Collection",

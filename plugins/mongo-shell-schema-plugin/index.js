@@ -33,17 +33,18 @@ class OdmGenerator {
   autocomplete(hint) {
     if (!hint) throw new Error('no hint passed to plugin');
     // remove namespace if it exits
-    const cmd = hint[0].replace(`${this.namespace()}.`, '');
     // Do we have a docs item for this
-    if (docs[cmd]) return docs[cmd];
+    if (docs[hint[0]]) return docs[hint[0]];
     throw new Error(`no documentation found for ${hint}`);
   }
 
   help(hints) {
     return [
       ['schema.collection()', 'Return a collection schema instance.'],
+      ['schema.schema()', 'Return schema information for all collection in the current db.'],
+      ['schema.generate()', 'Generate schema ODM language files for current db.'],
       ['schema.collection(name).generate()', 'Generates schema ODM language files.'],
-      ['schema.schema()', 'Returns all the collection schemas for the currently selected database.'],
+      ['schema.collection(name).schema()', 'Generates collection schema ODM language file.'],
     ]
   }
 }
@@ -62,6 +63,7 @@ class Plugin {
   /**
    * Returns a collection schema model
    *
+   * @param name String the collection name
    * @return {String}
    */
   collection(name) {
@@ -82,6 +84,11 @@ class Plugin {
       const collections = yield self.client.listCollections().toArray();
       const results = {};
 
+      // Set default options
+      if (!options.mode) options.mode = 'sample';
+      if (!options.size) options.size = 1000;
+
+      // Generate the schema
       for (const col of collections) {
         const schema = yield parseSchemaPromise(self.client
           .collection(col.name), options);
