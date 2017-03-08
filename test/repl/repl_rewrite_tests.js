@@ -42,8 +42,24 @@ describe('Repl Rewrite Tests', function() {
     {
       name: 'should not wrap for-loop if loop contains async operation',
       input: 'for(var i = 0; i < 100; i++) db.basic_test_3.insertOne({a:i})',
-      expected: 'for(var i = 0; i < 100; i++) await db.basic_test_3.insertOne({a:i})'
+      expected: 'for(var i = 0; i < 100; i++) (() => { async function _wrap() { return await db.basic_test_3.insertOne({a:i}); } return _wrap(); })();'
+    },
+    {
+      name: 'should not wrap for-loop if loop contains async operation (block-statement)',
+      input: 'for(var i = 0; i < 100; i++) { db.basic_test_3.insertOne({a:i}) }',
+      expected: 'for(var i = 0; i < 100; i++) { (() => { async function _wrap() { return await db.basic_test_3.insertOne({a:i}); } return _wrap(); })(); }'
+    },
+    {
+      name: 'should not wrap while-loop if loop contains async operation',
+      input: 'while(true) db.basic_test_3.insertOne({a:i})',
+      expected: 'while(true) (() => { async function _wrap() { return await db.basic_test_3.insertOne({a:i}); } return _wrap(); })();'
+    },
+    {
+      name: 'should not wrap while-loop if loop contains async operation (block-statement)',
+      input: 'while(true) { db.basic_test_3.insertOne({a:i}) }',
+      expected: 'while(true) { (() => { async function _wrap() { return await db.basic_test_3.insertOne({a:i}); } return _wrap(); })(); }'
     }
+
   ]);
 
   describeEx('async arguments', rewriteScript, [
