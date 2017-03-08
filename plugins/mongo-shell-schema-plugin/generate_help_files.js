@@ -7,7 +7,7 @@ const outputDir = `${__dirname}/docs`;
 
 // name space configurations
 const files = [
-  `${__dirname}/index.js`,
+  `${__dirname}/collection.js`,
 ];
 
 // Create docs directory

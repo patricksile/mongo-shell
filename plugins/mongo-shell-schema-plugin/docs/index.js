@@ -1,5 +1,5 @@
 
 module.exports = {
-  'collection': require('./collection'),
-  'schema': require('./schema')
+  'schema': require('./schema'),
+  'generate': require('./generate')
 }

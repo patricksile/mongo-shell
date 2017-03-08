@@ -1,6 +1,30 @@
 module.exports = {
   "tags": [
     {
+      "type": "param",
+      "string": "[options.mode=sample] String the sampling method, can be one of [sample,full].",
+      "name": "[options.mode=sample]",
+      "description": "String the sampling method, can be one of [sample,full].",
+      "types": [],
+      "typesDescription": "",
+      "variable": false,
+      "nonNullable": false,
+      "nullable": false,
+      "optional": false
+    },
+    {
+      "type": "param",
+      "string": "[options.size=1000] Number the sample size if [options.mode=sample] is defined.",
+      "name": "[options.size=1000]",
+      "description": "Number the sample size if [options.mode=sample] is defined.",
+      "types": [],
+      "typesDescription": "",
+      "variable": false,
+      "nonNullable": false,
+      "nullable": false,
+      "optional": false
+    },
+    {
       "type": "return",
       "string": "{Promise}",
       "types": [
@@ -24,12 +48,14 @@ module.exports = {
   "isClass": false,
   "isEvent": false,
   "ignore": false,
-  "line": 70,
-  "codeStart": 74,
-  "code": "schema() {\n\n}\n}\n\nmodule.exports = OdmGenerator;",
+  "line": 27,
+  "codeStart": 33,
+  "code": "schema(options = { mode: 'sample', size: 1000 }) {\n  return parseSchemaPromise(this.collection, options);\n}",
   "ctx": {
     "type": "method",
+    "constructor": "Collection",
+    "cons": "Collection",
     "name": "schema",
-    "string": "schema()"
+    "string": "Collection.prototype.schema()"
   }
 }
