@@ -10,35 +10,26 @@ describe('Repl JS Expressions tests', () => {
     beforeEach(() => test.setup());
     afterEach(() => test.teardown());
 
-    it('should correctly handle a global value expression expression [var a = 1]', function(done) {
+    it('should correctly handle a global value expression expression [var a = 1]', async function() {
       // Execute command
-      test.repl.eval('var a = 1', test.context, '', function(err, result) {
-        assert.equal(null, err);
-        assert.equal(1, test.context.a);
+      let result = await test.executeRepl('var a = 1', test.context);
+      assert.equal(1, test.context.a);
 
-        // Render the repl final text
-        let string = test.repl.writer(result);
-        string = string.replace(/\n|\\n/g, '');
-        assert.equal(''.trim(), string.trim());
-        done();
-      });
+      // Render the repl final text
+      let string = test.repl.writer(result);
+      string = string.replace(/\n|\\n/g, '');
+      assert.equal(''.trim(), string.trim());
     });
 
-    it('should correctly handle a global value expression expression [a = 1 + 1]', function(done) {
+    it('should correctly handle a global value expression expression [a = 1 + 1]', async function() {
       // Execute command
-      test.repl.eval('a = 1 + 1', test.context, '', function(err, result) {
-        assert.equal(null, err);
-        assert.equal(2, result);
+      let result = await test.executeRepl('a = 1 + 1', test.context);
+      assert.equal(2, result);
 
-        // Render the repl final text
-        let string = test.repl.writer(result);
-        string = string.replace(/\n|\\n/g, '');
-
-        assert.equal(
-          '2'.trim(),
-          string.trim());
-        done();
-      });
+      // Render the repl final text
+      let string = test.repl.writer(result);
+      string = string.replace(/\n|\\n/g, '');
+      assert.equal('2'.trim(), string.trim());
     });
   });
 });

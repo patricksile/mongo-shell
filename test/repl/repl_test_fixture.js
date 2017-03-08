@@ -33,7 +33,7 @@ class ReplTestFixture {
     const state = {
       client: this.client,
       context: this.context,
-      configuration: new Configuration(`${__dirname}/../../tmp/configuration.json`),
+      configuration: new Configuration(`${__dirname}/../../tmp/configuration.json`)
     };
 
     // Allow state to be accessed
@@ -53,6 +53,18 @@ class ReplTestFixture {
 
   teardown() {
     this.repl.close();
+  }
+
+  executeRepl(string, context) {
+    return new Promise((resolve, reject) => {
+      this.repl.eval(string, context, '', (err, result) => {
+        if (err) {
+          return reject(new SyntaxError(err));
+        }
+
+        resolve(result);
+      });
+    });
   }
 }
 
