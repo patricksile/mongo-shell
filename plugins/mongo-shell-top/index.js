@@ -71,10 +71,8 @@ function plugin(client, options = {}) {
         clearInterval(intervalId);
         screen.remove(table);
         table.destroy();
-        screen.destroy();
-      
+        screen.destroy();      
         // Resume the stdin
-        process.stdin.resume();
         resolve();
       });
 
