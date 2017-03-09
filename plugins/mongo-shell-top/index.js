@@ -17,6 +17,10 @@ class TopPlugin {
     }));
   }
 
+  usesTerminal() {
+    return true;
+  }
+
   description() {
     return 'Monitor basic usage statistics for each collection.';
   }
@@ -44,12 +48,6 @@ function plugin(client, options = {}) {
         , contrib = require('blessed-contrib')
         , screen = blessed.screen()
 
-      var state = options.state;
-      // console.log("========== has repl  2:: " + (state.repl != null));
-      // console.log(state.repl.eval, state.context, `${__dirname}/${__filename}`, function() {});
-      // state.repl.eval('.exit', state.context, `${__dirname}/${__filename}`, function() {});
-      // state.repl.eval('.exit\n', state.context, `${__dirname}/${__filename}`, function() {});
-      // process.exit(0)
       var table = contrib.table(
         { keys: true
         , vi: true
@@ -72,7 +70,8 @@ function plugin(client, options = {}) {
         screen.remove(table);
         table.destroy();
         screen.destroy();      
-        // Resume the stdin
+        
+        // Return control to the repl
         resolve();
       });
 
