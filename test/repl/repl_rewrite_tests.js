@@ -75,7 +75,7 @@ describe('Repl Rewrite Tests', function() {
     }
   ]);
 
-  describeEx('assert.throws', rewriteScript, [
+  describeEx('assert', rewriteScript, [
     {
       name: 'should rewrite async methods in `assert.throws` to use async form',
       input: 'assert.throws(function() { t.find({$and: 4}).toArray(); });',
@@ -85,6 +85,11 @@ describe('Repl Rewrite Tests', function() {
       name: 'should rewrite async methods in `assert.throws` to use async form within a function',
       input: 'function check() { assert.throws(function() { t.find({$and: 4}).toArray(); }); }',
       expected: 'async function check() { await assert.throws(async function() { await t.find({$and: 4}).toArray(); }); }'
+    },
+    {
+      name: 'should rewrite async methods in `assert.commandFailed` to use async form',
+      input: 'assert.commandFailed(db.adminCommand());',
+      expected: 'await assert.commandFailed(db.adminCommand());'
     }
   ]);
 
