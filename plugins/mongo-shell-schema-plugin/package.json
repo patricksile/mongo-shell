@@ -1,0 +1,37 @@
+{
+  "name": "mongo-shell-schema-plugin",
+  "version": "1.0.0",
+  "description": "Generates ODM definitions for multiple targets, including mongoose",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/*"
+  },
+  "mongo": {
+    "plugin": {
+      "type": "shell"
+    }
+  },
+  "keywords": [
+    "odm",
+    "schema",
+    "mongodb",
+    "generator"
+  ],
+  "author": "Christian Kvalheim",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "capitalize": "^1.0.0",
+    "co": "^4.6.0",
+    "ejs": "^2.5.6",
+    "mongodb": "^2.2.24",
+    "mongodb-schema": "^6.1.0",
+    "pluralize": "^4.0.0"
+  },
+  "devDependencies": {
+    "co": "^4.6.0",
+    "dox": "^0.9.0",
+    "mkdirp": "^0.5.1",
+    "mocha": "^3.2.0",
+    "mongodb": "^2.2.24"
+  }
+}
