@@ -8,15 +8,13 @@ after(() => test.databaseTeardown());
 describe('Repl Error tests', () => {
   describe('parser error handling', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
-    it('should correctly return sensible error on only providing db and collection', function(done) {
+    it('should correctly return sensible error on only providing db and collection', async function() {
       // Execute command
-      test.repl.eval('db.tests2', test.context, '', function(err, result) {
-        assert.equal(null, err);
-        assert.equal('test_runner.tests2', result);
-
-        done();
-      });
+      let result = await test.executeRepl('db.tests2', test.context);
+      assert.ok(result);
+      assert.equal('test_runner.tests2', result);
     });
 
     // NOTE: Currently disabled because of the CollectionProxy, the name isn't actually returned!
@@ -32,13 +30,10 @@ describe('Repl Error tests', () => {
     //   });
     // });
 
-    it('should correctly return nothing for undefined variable', function(done) {
+    it('should correctly return nothing for undefined variable', async function() {
       // Execute command
-      test.repl.eval('db.tests2.__', test.context, '', function(err, result) {
-        assert.equal(null, err);
-
-        done();
-      });
+      let result = await test.executeRepl('db.tests2.__', test.context);
+      assert.ok(result);
     });
   });
 });

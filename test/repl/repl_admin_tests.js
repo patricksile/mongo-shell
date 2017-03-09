@@ -8,26 +8,20 @@ after(() => test.databaseTeardown());
 describe('Repl Helper tests', () => {
   describe('Admin helpers', () => {
     beforeEach(() => test.setup());
+    afterEach(() => test.teardown());
 
-    it('should correctly call currentOp method', function(done) {
+    it('should correctly call currentOp method', async function() {
       // Execute command
-      test.repl.eval('db.currentOp()', test.context, '', function(err, result) {
-        assert.equal(null, err);
-        assert.ok(result.inprog);
-        done();
-      });
+      let result = await test.executeRepl('db.currentOp()', test.context);
+      assert.ok(result);
+      assert.ok(result.inprog);
     });
 
-    it('should correctly call `eval` method', function(done) {
+    it('should correctly call `eval` method', async function() {
       // Execute command
-      test.repl.eval('db.eval("return 1")', test.context, '', function(err, result) {
-        // console.log("==============================================")
-        // console.dir(err)
-        // console.dir(result)
-        assert.equal(null, err);
-        assert.equal(1, result);
-        done();
-      });
+      let result = await test.executeRepl('db.eval("return 1")', test.context);
+      assert.ok(result);
+      assert.equal(1, result);
     });
   });
 });

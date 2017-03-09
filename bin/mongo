@@ -230,7 +230,7 @@ uri = uriObject.toString();
     // Do we have eval parameter, then execute it
     if (options._all.eval) {
       await Executor.executeSync(options._all.eval, context, {
-        filename: `global`,
+        filename: 'global',
         detectCallbacks: true
       });
     }
