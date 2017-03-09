@@ -27,11 +27,7 @@ const packageJSON = require('../package.json');
 const getUsage = require('command-line-usage');
 const commandLineArgs = require('command-line-args');
 const { cmdLineOptions, cmdLineSections, processor } = require('../lib/command_line');
-
-const {
-  palette,
-  colorize
-} = require('../lib/colors');
+const { palette } = require('../lib/colors');
 
 // Parse the command line
 const options = commandLineArgs(cmdLineOptions);
@@ -113,7 +109,7 @@ uri = uriObject.toString();
       // Attempt to read the .mongorc.js file from $HOME
       try {
         mongoRc = fs.readFileSync(`${os.homedir()}/.mongorc.js`, 'utf8');
-      } catch(err) {}
+      } catch (err) {}
     }
 
     // Attempt to instantiate all the plugins
@@ -130,13 +126,13 @@ uri = uriObject.toString();
       const configurationPlugins = _configuration.plugins;
 
       // For each of the plugins load and attempt to initialize
-      for (var _module of configurationPlugins) {
+      for (let _module of configurationPlugins) {
         try {
           // Require the module
-          const plugin = require(_module[1]);
+          const Plugin = require(_module[1]);
           // Add the plugin to the list
-          _plugins.push(new plugin(client, { log: console.log }));
-        } catch(err) {
+          _plugins.push(new Plugin(client, { log: console.log }));
+        } catch (err) {
           console.error(`could not load plugin from ${_module[1]}`);
         }
       }
@@ -236,7 +232,7 @@ uri = uriObject.toString();
     }
 
     // Start the repl
-    state.repl = replServer.start();
+    state.repl = await replServer.start();
   } catch (err) {
     console.log(err);
     if (!err.message.match(/failed to connect to server/)) {

@@ -23,7 +23,7 @@ class ReplTestFixture {
     if (this.client) return this.client.close();
   }
 
-  setup() {
+  async setup() {
     // Init context
     const initContext = Object.assign({}, global, {});
     this.context = Object.assign(vm.createContext(initContext), {
@@ -44,11 +44,12 @@ class ReplTestFixture {
 
     // Create a repl instance
     let repl = new REPL(state, {
-      prompt: ''
+      prompt: '',
+      history: false
     });
 
     // Start the repl
-    this.repl = repl.start();
+    this.repl = await repl.start();
   }
 
   teardown() {
