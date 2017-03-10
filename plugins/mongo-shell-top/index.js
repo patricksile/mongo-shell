@@ -1,5 +1,3 @@
-// const docs = require('./docs');
-
 class TopPlugin {
   constructor(client, options = {}) {
     this.client = client;
