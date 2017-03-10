@@ -58,8 +58,12 @@ describe('Repl Rewrite Tests', function() {
       name: 'should not wrap while-loop if loop contains async operation (block-statement)',
       input: 'while(true) { db.basic_test_3.insertOne({a:i}) }',
       expected: 'while(true) { (() => { async function _wrap() { return await db.basic_test_3.insertOne({a:i}); } return _wrap(); })(); }'
+    },
+    {
+      name: 'should wrap variable declarations if assignment is an async operation',
+      input: 'var a = assert.commandFailedWithCode(db.adminCommand())',
+      expected: 'var a = (() => { async function _wrap() { return await assert.commandFailedWithCode(db.adminCommand()); } return _wrap(); })();'
     }
-
   ]);
 
   describeEx('async arguments', rewriteScript, [
@@ -75,7 +79,7 @@ describe('Repl Rewrite Tests', function() {
     }
   ]);
 
-  describeEx('assert', rewriteScript, [
+  describeEx('assertions', rewriteScript, [
     {
       name: 'should rewrite async methods in `assert.throws` to use async form',
       input: 'assert.throws(function() { t.find({$and: 4}).toArray(); });',
@@ -90,6 +94,16 @@ describe('Repl Rewrite Tests', function() {
       name: 'should rewrite async methods in `assert.commandFailed` to use async form',
       input: 'assert.commandFailed(db.adminCommand());',
       expected: 'await assert.commandFailed(db.adminCommand());'
+    },
+    {
+      name: 'should not rewrite async op inside async assertion method',
+      input: 'assert.commandWorked(t.createIndex({x: 1}, {unique: true}));',
+      expected: 'await assert.commandWorked(t.createIndex({x: 1}, {unique: true}));'
+    },
+    {
+      name: 'should not rewrite async op inside async assertion method (within assignment)',
+      input: 'var a = assert.commandFailedWithCode(db.adminCommand());',
+      expected: 'var a = await assert.commandFailedWithCode(db.adminCommand());'
     }
   ]);
 
