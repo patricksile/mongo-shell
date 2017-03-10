@@ -1,0 +1,27 @@
+{
+  "name": "mongo-shell-top",
+  "version": "1.0.0",
+  "description": "Mongo Top Shell Plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/*"
+  },
+  "mongo": {
+    "plugin": {
+      "type": "shell"
+    }
+  },
+  "keywords": [
+    "mongo",
+    "shell",
+    "top",
+    "diagnostics"
+  ],
+  "author": "Christian Kvalheim",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.7.5",
+    "colors": "^1.1.2"
+  }
+}

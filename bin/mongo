@@ -112,12 +112,27 @@ uri = uriObject.toString();
       } catch (err) {}
     }
 
+    // Init context
+    const initContext = Object.assign({}, global, {});
+
+    // JsTest (currently) static plugin
+    JsTest.decorate(initContext);
+    LegacyGlobal.decorate(initContext);
+
+    // Create a context for execution
+    let context = vm.createContext(initContext);
+    // Internal state, not visible to repl
+    state = { client, context, connectionOptions, configuration };
+
     // Attempt to instantiate all the plugins
     const _plugins = [];
     // Go over all the plugins
     for (let name in plugins) {
-      _plugins.push(new plugins[name](client, { log: console.log }));
+      _plugins.push(new plugins[name](client, { log: console.log, state: state }));
     }
+
+    // Add plugins to state
+    state.plugins = _plugins;
 
     // Load additional plugins loaded by the user
     try {
@@ -131,31 +146,19 @@ uri = uriObject.toString();
           // Require the module
           const Plugin = require(_module[1]);
           // Add the plugin to the list
-          _plugins.push(new Plugin(client, { log: console.log }));
-        } catch (err) {
-          console.error(`could not load plugin from ${_module[1]}`);
+          _plugins.push(new Plugin(client, { log: console.log, state: state }));
+        } catch(err) {
+          console.error(`could not load plugin from ${_module[1]}, ${err.stack}`);
         }
       }
     } catch (err) {
       // console.log(err)
     }
 
-    // Init context
-    const initContext = Object.assign({}, global, {});
-
     // Let plugin's decorate the context
     for (let i = 0; i < _plugins.length; i++) {
       await _plugins[i].decorateContext(initContext);
     }
-
-    // JsTest (currently) static plugin
-    JsTest.decorate(initContext);
-    LegacyGlobal.decorate(initContext);
-
-    // Create a context for execution
-    let context = vm.createContext(initContext);
-    // Internal state, not visible to repl
-    state = { client, context, connectionOptions, configuration, plugins: _plugins };
 
     // If --nodb is not defined
     if (!options._all.nodb) {
