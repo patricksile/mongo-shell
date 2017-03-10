@@ -42,11 +42,16 @@ class TopPlugin {
 }
 
 function plugin(client, options = {}) {
-  return function() {
+  return function(seconds) {
     return new Promise((resolve, reject) => {
       var blessed = require('blessed')
         , contrib = require('blessed-contrib')
         , screen = blessed.screen()
+
+      // Set the interval time
+      const intervalTime = typeof seconds == 'number'
+        ? seconds * 1000
+        : 1000;
 
       var table = contrib.table(
         { keys: true
@@ -55,17 +60,18 @@ function plugin(client, options = {}) {
         , selectedFg: 'white'
         , selectedBg: 'blue'
         , interactive: true
-        , label: 'Active Processes'
+        , label: `Mongo Top (Update every ${seconds || 1} seconds) [Press escape, q or cntrl-c to quit]`
         , width: '100%'
         , height: '100%'
         , border: {type: "line", fg: "cyan"}
         , columnSpacing: 10
-        , columnWidth: [16, 12]})
+        , columnWidth: [50, 10, 10, 10]})
 
       table.focus()
       screen.append(table)
 
-      screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+      // Terminate plugin
+      function terminate() {
         clearInterval(intervalId);
         screen.remove(table);
         table.destroy();
@@ -73,75 +79,78 @@ function plugin(client, options = {}) {
         
         // Return control to the repl
         resolve();
+      }
+
+      // When the user presses escape, q or control-c escape
+      screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+        terminate();
       });
 
-      const intervalId = setInterval(() => {
-        var data = [];
+      // Last document (used for diff calculations)
+      let lastResult = null;
 
-        for(var i = 0; i < 40; i++) {
-          data.push([Math.round(Math.random() * 100), Math.round(Math.random() * 100)]);
-        }
+      // Update table
+      function updateTable() {
+        // Run the top command
+        client.db('admin').command({top: true}, function(err, result) {
+          if(err) {
+            return terminate();
+          }
 
-        table.setData({ 
-          headers: ['col1', 'col2'],
-          data: data
+          // Is the last last result null
+          if (!lastResult) {
+            lastResult = result;
+          }
+
+          // Contains the rows we will be using
+          var data = [];
+
+          // Add the data
+          for (const name in result.totals) {
+            if (name.indexOf('.') != -1) {
+              let total = 0;
+              let read = 0;
+              let write = 0;
+
+              // Calculate the total, read + write
+              if (lastResult.totals[name]) {
+                total = Math.round((result.totals[name].total.time - lastResult.totals[name].total.time)/1000);
+                read = Math.round((result.totals[name].readLock.time - lastResult.totals[name].readLock.time)/1000);
+                write = Math.round((result.totals[name].writeLock.time - lastResult.totals[name].writeLock.time)/1000);
+              }
+
+              data.push([
+                name.length > 50 ? name.substring(0, 29) : name, 
+                `${total}ms`,
+                `${read}ms`,
+                `${write}ms`,
+              ]);
+            }
+
+          }
+
+          // Set the data
+          table.setData({ 
+            headers: ['ns', 'total', 'read', 'write'],
+            data: data
+          });
+
+          // Update the last result          
+          lastResult = result;
+          // Render the table
+          screen.render();
         });
-        
-        screen.render()
-      }, 1000);
+      }
+
+      // Sample the data
+      const intervalId = setInterval(() => {
+        updateTable();
+      }, intervalTime);
+
+      // Update table immediately
+      updateTable();
     });
   }
 }
 
 module.exports = TopPlugin;
-
-
-// var blessed = require('blessed')
-//   , contrib = require('blessed-contrib')
-//   , screen = blessed.screen()
-
-// var table = contrib.table(
-//    { keys: true
-//    , vi: true
-//    , fg: 'white'
-//    , selectedFg: 'white'
-//    , selectedBg: 'blue'
-//    , interactive: true
-//    , label: 'Active Processes'
-//    , width: '100%'
-//    , height: '100%'
-//    , border: {type: "line", fg: "cyan"}
-//    , columnSpacing: 10
-//    , columnWidth: [16, 12]})
-
-// table.focus()
-// screen.append(table)
-
-// table.setData(
-//  { headers: ['col1', 'col2']
-//  , data:
-//   [ [1, 2]
-//   , [3, 4]
-//   , [5, 6]
-//   , [7, 8] ]})
-
-// screen.key(['escape', 'q', 'C-c'], function(ch, key) {
-//   return process.exit(0);
-// });
-
-// setInterval(() => {
-//   var data = [];
-
-//   for(var i = 0; i < 40; i++) {
-//     data.push([Math.round(Math.random() * 100), Math.round(Math.random() * 100)]);
-//   }
-
-//   table.setData({ 
-//     headers: ['col1', 'col2'],
-//     data: data
-//   });
-  
-//   screen.render()
-// }, 1000);
-
-// screen.render()
