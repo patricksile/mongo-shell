@@ -1,0 +1,10 @@
+{
+  "top": {
+    "description": "A Mongotop console implementation",
+    "package": "mongo-shell-top"
+  },
+  "schema": {
+    "description": "A MongoDB ODM Schema generator, export collections to ODM source definitions",
+    "package": "mongo-shell-schema"
+  }
+}
