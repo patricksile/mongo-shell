@@ -87,8 +87,11 @@ uri = uriObject.toString();
     // Print out some information about the shell
     console.log(palette.string.green(`MongoDB Shell CLI version ${packageJSON.version}`));
 
+    // Configuration file path
+    const configurationPath = `${os.homedir()}/.mongo/configuration.json`;
+
     // Handles everything related to the shell configuration file
-    const configuration = new Configuration(`${os.homedir()}/.mongo/configuration.json`);
+    const configuration = new Configuration(configurationPath);
 
     process.on('unhandledRejection', (reason, p) => {
       console.log(reason);
@@ -152,7 +155,7 @@ uri = uriObject.toString();
         }
       }
     } catch (err) {
-      // console.log(err)
+      console.log(`failed to load file ${configurationPath}, error: [${err.message}]`);
     }
 
     // Let plugin's decorate the context
