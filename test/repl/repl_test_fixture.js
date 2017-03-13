@@ -33,6 +33,7 @@ class ReplTestFixture {
     const state = {
       client: this.client,
       context: this.context,
+      plugins: [],
       configuration: new Configuration(`${__dirname}/../../tmp/configuration.json`)
     };
 
@@ -45,7 +46,8 @@ class ReplTestFixture {
     // Create a repl instance
     let repl = new REPL(state, {
       prompt: '',
-      history: false
+      history: false,
+      disableOnExit: true
     });
 
     // Start the repl

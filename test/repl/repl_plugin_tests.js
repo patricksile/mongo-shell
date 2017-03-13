@@ -65,6 +65,18 @@ describe('Repl Plugin tests', () => {
       result = await test.executeRepl(`plugin install ${__dirname}/../plugins/example5`, test.context);
       assert.ok(result.indexOf('plugin install error') !== -1);
     });
+
+    it('should correctly return results for search', async function() {
+      try {
+        await rm(`${__dirname}/../../tmp`);
+      } catch (err) {
+        // ignore
+      }
+
+      // List the plugins available
+      let result = await test.executeRepl('plugin search', test.context);
+      assert.ok(result.indexOf('mmongo-shell-schema') != -1);
+    });
   });
 
   describe('exercise plugin', () => {
