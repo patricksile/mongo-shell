@@ -22,6 +22,7 @@ const LegacyCursor = require('../lib/legacy/legacy_cursor');
 const LegacyGlobal = require('../lib/legacy/legacy_global');
 const JsTest = require('../lib/legacy/jstest');
 const packageJSON = require('../package.json');
+const tty = require('tty');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -70,6 +71,24 @@ for (let i = 0; i < unknown.length; i++) {
   if (typeof arg === 'string' && arg.indexOf('.js') === -1) {
     uri = arg.indexOf('mongodb://') === -1 ? `mongodb://${arg}` : arg;
   }
+}
+
+// Read the entire stdin from the pipe and execute the
+// piped in javascript
+function executePipedFile(Executor, context, options) {
+  return new Promise((resolve, reject) => {
+    var stdin = process.openStdin();
+    var data = "";
+
+    stdin.on('data', function(chunk) { data += chunk; });
+    stdin.on('error', function(err) { reject(err); });
+    stdin.on('end', function() {
+      Executor
+        .executeSync(data, context, options)
+        .then(resolve)
+        .catch(reject);    
+    });    
+  });
 }
 
 // Get the uriObject and additional MongoClient options
@@ -217,25 +236,31 @@ uri = uriObject.toString();
         }
       }
 
-      // Shutdown mongodb connection
-      await client.close();
-
-      // Cut short as we are done;
-      return;
+      if (!options._all.shell) {
+        // Shutdown mongodb connection
+        // Cut short as we are done;
+        return await client.close();
+      }
+    } else if (options._all.eval) {
+      // Do we have eval parameter, then execute it
+      await Executor.executeSync(options._all.eval, context, {
+        filename: 'global',
+        detectCallbacks: true
+      });
+    } else if (!tty.isatty()) {
+      // User is piping in content to the console
+      await executePipedFile(Executor, context, {
+        filename: 'global',
+        detectCallbacks: true        
+      });
+      // Exit process
+      process.exit(0);
     }
 
     // Create a repl
     const replServer = new REPL(state, {
       plugins: _plugins, log: console.log
     });
-
-    // Do we have eval parameter, then execute it
-    if (options._all.eval) {
-      await Executor.executeSync(options._all.eval, context, {
-        filename: 'global',
-        detectCallbacks: true
-      });
-    }
 
     // Start the repl
     state.repl = await replServer.start();
