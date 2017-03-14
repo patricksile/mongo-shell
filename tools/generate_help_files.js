@@ -9,10 +9,10 @@ const namespaces = {
   ],
   'rs': [
     `${__dirname}/../lib/rs.js`
+  ],
+  'db.collection': [
+    `${__dirname}/../lib/collection_proxy.js`
   ]
-  // 'db.collection': [
-  //   `${__dirname}/lib/collection.js`
-  // ]
 };
 
 // Create docs directory
@@ -29,7 +29,7 @@ for (let namespace in namespaces) {
 
     // Iterate over all the object
     obj.forEach(element => {
-      if (element.ctx.type === 'method') {
+      if (element.ctx && element.ctx.type === 'method') {
         fs.writeFileSync(
           `${__dirname}/../lib/docs/${namespace}.${element.ctx.name}.js`,
           `module.exports = ${JSON.stringify(element, null, 2)}`,
@@ -37,6 +37,22 @@ for (let namespace in namespaces) {
 
         // Add the file and method to the indexes
         indexes[`${namespace}.${element.ctx.name}`] = `./${namespace}.${element.ctx.name}`;
+      } else {
+        element.tags.forEach(tag => {
+          if (tag.type == 'method') {
+            const name = tag.string == '' ? element.ctx.name : tag.string;
+
+            fs.writeFileSync(
+              `${__dirname}/../lib/docs/${namespace}.${name}.js`,
+              `module.exports = ${JSON.stringify(element, null, 2)}`,
+              'utf8');
+
+            // Add the file and method to the indexes
+            indexes[`${namespace}.${name}`] = `./${namespace}.${name}`;
+          } else if (tag.type == 'ctx') {
+            element.ctx = JSON.parse(tag.string);
+          }
+        })
       }
     });
   }
@@ -59,4 +75,4 @@ ${strings.join(',\n')}
 // Write the indexes file
 fs.writeFileSync(`${__dirname}/../lib/docs/index.js`, template, 'utf8');
 
-console.dir(indexes);
+// console.dir(indexes);
