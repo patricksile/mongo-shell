@@ -8,6 +8,7 @@ const Executor = require('../lib/executor');
 const REPL = require('../lib/repl');
 const ReplicaSet = require('../lib/rs');
 const Sharded = require('../lib/sh');
+const mongodb = require('mongodb');
 const { MongoClient, Cursor, Collection, ObjectId } = require('mongodb');
 const AggregationCursor = require('mongodb/lib/aggregation_cursor');
 const MongoDb = require('mongodb').Db;
@@ -23,6 +24,7 @@ const LegacyGlobal = require('../lib/legacy/legacy_global');
 const JsTest = require('../lib/legacy/jstest');
 const packageJSON = require('../package.json');
 const tty = require('tty');
+const ExtJSON = require('mongodb-extjson');
 
 // Command line options
 const getUsage = require('command-line-usage');
@@ -136,6 +138,9 @@ uri = uriObject.toString();
 
     // Init context
     const initContext = Object.assign({}, global, {});
+
+    // Mix in ExtJSON
+    initContext.ExtJSON = new ExtJSON(mongodb);
 
     // JsTest (currently) static plugin
     JsTest.decorate(initContext);
