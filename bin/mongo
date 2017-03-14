@@ -148,11 +148,6 @@ uri = uriObject.toString();
 
     // Attempt to instantiate all the plugins
     const _plugins = [];
-    // Go over all the plugins
-    for (let name in plugins) {
-      _plugins.push(new plugins[name](client, { log: console.log, state: state }));
-    }
-
     // Add plugins to state
     state.plugins = _plugins;
 
