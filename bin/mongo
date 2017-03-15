@@ -247,6 +247,10 @@ uri = uriObject.toString();
         filename: 'global',
         detectCallbacks: true
       });
+
+      if (!options._all.shell) {
+        process.exit(0);
+      }
     } else if (!tty.isatty()) {
       // User is piping in content to the console
       await executePipedFile(Executor, context, {
