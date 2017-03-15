@@ -141,6 +141,14 @@ uri = uriObject.toString();
 
     // Mix in ExtJSON
     initContext.ExtJSON = new ExtJSON(mongodb);
+    // const p = initContext.ExtJSON.parse;
+    // initContext.ExtJSON.parse = function(text, options) {
+    //   try {
+    //   return p(text, options)
+    //   } catch(e) {
+    //     throw new Error(e.message);
+    //   }
+    // }
 
     // JsTest (currently) static plugin
     JsTest.decorate(initContext);

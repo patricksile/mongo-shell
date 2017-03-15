@@ -1,9 +1,11 @@
 const MongoClient = require('mongodb').MongoClient,
+      mongodb = require('mongodb'),
       vm = require('vm'),
       REPL = require('../../lib/repl'),
       ReplicaSet = require('../../lib/rs'),
       Configuration = require('../../lib/configuration'),
-      Db = require('../../lib/db');
+      Db = require('../../lib/db'),
+      ExtJSON = require('mongodb-extjson');
 
 class ReplTestFixture {
   constructor() {}
@@ -42,6 +44,9 @@ class ReplTestFixture {
     // Add the proxies
     this.context.db = Db.proxy(this.client.s.databaseName, state);
     this.context.rs = new ReplicaSet(state);
+
+    // Add the ExtJSON
+    this.context.ExtJSON = new ExtJSON(mongodb);
 
     // Create a repl instance
     let repl = new REPL(state, {

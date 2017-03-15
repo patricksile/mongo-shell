@@ -34,7 +34,7 @@
     "has-ansi": "^2.0.0",
     "mkdirp": "^0.5.1",
     "mongodb": "mongodb/node-mongodb-native#2.2",
-    "mongodb-extjson": "^1.0.3",
+    "mongodb-extjson": "^1.0.4",
     "npmi": "^2.0.1"
   },
   "devDependencies": {

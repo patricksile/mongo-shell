@@ -33,5 +33,10 @@ describe('Repl Basic tests', function() {
       // // Get the document
       // result = yield executeRepl(test, 'db.basic_test_1.explain().find({})', test.context);
     });
+
+    it('should correctly error due to method throwing', async function() {
+      let result = await test.executeRepl('ExtJSON.parse({})', test.context);      
+      assert.ok(result.indexOf('Unexpected token o in JSON') != -1);
+    });
   });
 });
