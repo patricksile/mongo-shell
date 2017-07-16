@@ -22,6 +22,7 @@ describe('Repl Output tests', function() {
       // Get the document
       result = await test.executeRepl('db.output_test.findOne({a:1})', test.context);
       result = test.repl.writer(result);
+      console.dir(result)
       assert.ok(result.indexOf('$oid') !== -1);
 
       // Switch to shell
